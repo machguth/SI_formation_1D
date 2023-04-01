@@ -1,13 +1,8 @@
-""" *Experimental 1D heat conduction model*
+""" *** 1D heat conduction model ***
 Intended for use in snow and ice and with a
 Calculates heat conduction and the amount of superimposed ice that forms
 
-to be implemented:
-- make alpha a vector of length n and set alpha to zero for all depths that contain irreducible water
-- only once the water has refrozen in the uppermost layer with irreducible water,
-  cooling can progress further to depth
-- Sine curve air temperature variations, in order to be able to simulate one or more years
-- Open boundary condition to the bottom
+This file contains a variety of functions that area called by heat_flux_1D.py
 """
 
 
