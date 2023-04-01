@@ -46,7 +46,7 @@ k = 0.5  # [W m-1 K-1] Thermal conductivity of ice at rho approx. 400 kg m-3 = 0
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
 rho = 400  # [kg m-3] Density of the snow or ice
-iwc = 7  # [% of mass] Irreducible water content in snow
+iwc = 0  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of the snow where it is water saturated
 t_final = 86400 * days  # [s] end of model run
 dt = 600  # [s] numerical time step, needs to be a fraction of 86400 s
@@ -66,8 +66,8 @@ bottom_boundary = True
 Tsurf = -20  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
-output_dir = r'C:\horst\modeling\lateralflow'
-# output_dir = r'D:\modelling\lateralflow'
+# output_dir = r'C:\horst\modeling\lateralflow'
+output_dir = r'D:\modelling\lateralflow'
 
 # ============================================== Preparations ===================================================
 
