@@ -38,8 +38,8 @@ time_start = datetime.datetime.now()
 # ============================================== input ===================================================
 
 days = 10  # [days] time period for which to simulate
-D = 1  # [m] thickness of snow pack
-n = 25  # [] number of layers
+D = 1.8  # [m] thickness of snow pack
+n = 50  # [] number of layers
 T0 = 0  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
 k = 0.5  # [W m-1 K-1] Thermal conductivity of ice at rho approx. 400 kg m-3 = 0.5; for ice 2.25
@@ -49,7 +49,7 @@ rho = 400  # [kg m-3] Density of the snow or ice
 iwc = 0  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of the snow where it is water saturated
 t_final = 86400 * days  # [s] end of model run
-dt = 600  # [s] numerical time step, needs to be a fraction of 86400 s
+dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # prescribed either for the top or the bottom of the model domain (not both). Bottom is default (slushatbottom = True),
@@ -66,8 +66,8 @@ bottom_boundary = True
 Tsurf = -20  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
-# output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'D:\modelling\lateralflow'
+output_dir = r'C:\horst\modeling\lateralflow'
+# output_dir = r'D:\modelling\lateralflow'
 
 # ============================================== Preparations ===================================================
 
