@@ -15,8 +15,8 @@
       through the snow and towards the snow surface (where heat is lost to a cold atmosphere).
     - The irreducible water content is being specified as input parameter
     - The model can take irreducible water content inside the snowpack into account. It does so by assuming that each
-      layer's irreducible water first needs to be frozen before heat conduction through that layer is possible. This means
-      any presence of irreducible water strongly slows the progression of a cold wave.
+      layer's irreducible water first needs to be frozen before heat conduction through that layer is possible.
+      This means any presence of irreducible water strongly slows the progression of a cold wave.
 - Boundary conditions:
     - Top and bottom boundary conditions can be defined.
     - Bottom boundary condition can be left open.
@@ -30,22 +30,25 @@
 """
 
 import numpy as np
+import pandas as pd
+import xarray as xr
 import heat_flux_1D_functions as hf
 import datetime
 
 time_start = datetime.datetime.now()
 
 # ============================================== input ===================================================
+measured_T = r'C:\horst\modeling\lateralflow\D6050043 - logged data (FS2).xlsx'
 
-days = 10  # [days] time period for which to simulate
-D = 1.8  # [m] thickness of snow pack
+days = 80  # [days] time period for which to simulate
+D = 15.  # [m] thickness of snow pack or ice slab
 n = 50  # [] number of layers
-T0 = 0  # [°C]  initial temperature of all layers
+T0 = -10  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
-k = 0.5  # [W m-1 K-1] Thermal conductivity of ice at rho approx. 400 kg m-3 = 0.5; for ice 2.25
+k = 2.25  # [W m-1 K-1] Thermal conductivity of ice at rho approx. 400 kg m-3 = 0.5; for ice at rho=917 kg m-3: 2.25
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
-rho = 400  # [kg m-3] Density of the snow or ice
+rho = 900  # [kg m-3] Density of the snow or ice
 iwc = 0  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of the snow where it is water saturated
 t_final = 86400 * days  # [s] end of model run
@@ -54,16 +57,16 @@ dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # prescribed either for the top or the bottom of the model domain (not both). Bottom is default (slushatbottom = True),
 # if set to False, then slush and SI formation is assumed to happen at the top.
-slushatbottom = True
+slushatbottom = False
 # specify if the bottom boundary condition should be applied or not (if not, temperatures at the bottom can fluctuate
 # freely). If there is no bottom boundary condition, bottom heat flux will equal zero
-bottom_boundary = True
+bottom_boundary = False
 
 # -20  # [°C] boundary condition temperature top
 # can either be a scalar (e.g. -20 °C) or an array of length days + 1
 # Tsurf = np.linspace(-20, -0, days + 1)
 # Tsurf = 'sine'
-Tsurf = -20  # [°C] Top boundary condition
+Tsurf = 0  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
 output_dir = r'C:\horst\modeling\lateralflow'
@@ -81,6 +84,40 @@ dTdt = np.empty(n)  # derivative of temperature at each node
 phi = np.empty([n+1, len(t)])  # array of the heat flux per time step, for each layer and time step
 refreeze = np.empty([2, len(t)])
 dt_plot = np.floor(len(t) / 40) * dt  # [s] time interval for which to plot temperature evolution
+
+# read the thermistor string data
+df_mt = pd.read_excel(measured_T)
+df_mt['dateUTC'] = pd.to_datetime(df_mt['DateTime (UTC)'])
+df_mt.set_index('dateUTC', inplace=True)
+
+# establish list of depth values
+depths = (df_mt.columns)[5:].values  # columns that contain depth values
+for ni, i in enumerate(depths):
+    depths[ni] = float(i.split(' ')[0])
+
+temperature = df_mt[df_mt.columns[5:]].to_numpy()
+
+ds = xr.Dataset(
+    data_vars=dict(
+        temperature=(['time', 'z'], temperature),
+    ),
+    coords=dict(
+        z=depths,
+        time=df_mt.index.values
+    ),
+    attrs=dict(description="thermistor data FS2, Greenland Ice Sheet."),
+)
+
+da = xr.DataArray(
+    data=temperature,
+    dims=['time', 'z'],
+    coords=dict(
+        z=depths,
+        time=df_mt.index.values
+    ),
+    attrs=dict(description="thermistor data FS2, Greenland Ice Sheet."),
+)
+
 
 # ============================================== calculations ===================================================
 
