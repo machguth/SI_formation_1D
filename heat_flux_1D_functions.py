@@ -141,6 +141,7 @@ def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
 def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
                                t_final, t, refreeze_c, output_dir, iwc, da, validation_dates):
 
+    colors_validation = ['tab:red', 'tab:cyan', 'tab:purple', 'tab:orange', 'tab_pink']
     plt.rcParams.update({'font.size': 28})
     fig, ax = plt.subplots(2, figsize=(24, 20), gridspec_kw={'height_ratios': [3, 1]})
     t_sel = np.arange(0, len(T_evol[0, :]), dt_plot/dt)
@@ -150,17 +151,18 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
     for ni, i in enumerate(t_sel):
         day = int(np.floor(i * dt / 86400))
         ax[0].plot(T_evol[:, int(i)], y, color=colors[ni])
-        for vd in validation_dates:
-            ax[0].plot(da.z.values, da.sel(time=vd).values, color='tab:orange')
         # ax[0].plot([Tsurf[int(i)], T_evol[0, int(i)]], [0-dx/2, y[0]], color=colors[ni])
         # if bottom_boundary:
         #     ax[0].plot([T_evol[-1, int(i)], Tbottom], [y[-1], D+dx/2], color=colors[ni])
         ax[0].axhline(0, color='gray', ls=':')
         ax[0].axhline(D, color='gray', ls=':')
+    for nvd, vd in enumerate(validation_dates):
+        ax[0].plot(da.sel(time=vd).values, da.z.values, color=colors_validation[nvd], lw=3, ls='--', label=vd)
     ax[0].invert_yaxis()
     ax[0].set_xlabel('Temperature (°C)')
     ax[0].set_ylabel('Depth (m)')
     ax[0].set_ylim(ax[0].get_ylim()[0], ax[0].get_ylim()[1])
+    ax[0].legend()
     if slushatbottom:
         ax[0].set_title('Temperature with snow depth')
         ax[0].axhspan(D, ax[0].get_ylim()[0], color='skyblue')
