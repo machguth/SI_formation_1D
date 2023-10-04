@@ -38,7 +38,10 @@ import datetime
 time_start = datetime.datetime.now()
 
 # ============================================== input ===================================================
-measured_T = r'C:\horst\modeling\lateralflow\D6050043 - logged data (FS2).xlsx'
+measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
+
+start_date = '07/05/2022  00:00:00'
+validation_dates = ['24/08/2022  00:00:00', '17/09/2022  00:00:00']
 
 days = 80  # [days] time period for which to simulate
 D = 15.  # [m] thickness of snow pack or ice slab
@@ -97,16 +100,16 @@ for ni, i in enumerate(depths):
 
 temperature = df_mt[df_mt.columns[5:]].to_numpy()
 
-ds = xr.Dataset(
-    data_vars=dict(
-        temperature=(['time', 'z'], temperature),
-    ),
-    coords=dict(
-        z=depths,
-        time=df_mt.index.values
-    ),
-    attrs=dict(description="thermistor data FS2, Greenland Ice Sheet."),
-)
+# ds = xr.Dataset(
+#     data_vars=dict(
+#         temperature=(['time', 'z'], temperature),
+#     ),
+#     coords=dict(
+#         z=depths,
+#         time=df_mt.index.values
+#     ),
+#     attrs=dict(description="thermistor data FS2, Greenland Ice Sheet."),
+# )
 
 da = xr.DataArray(
     data=temperature,
