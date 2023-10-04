@@ -34,16 +34,22 @@ import pandas as pd
 import xarray as xr
 import heat_flux_1D_functions as hf
 import datetime
+from scipy import interpolate
 
 time_start = datetime.datetime.now()
 
 # ============================================== input ===================================================
+# Compare to measurements?
+# If yes, then measured temperatures are automatically used as starting conditions
+compare_to_measurements = True
+
 measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
+top_thermistor_height = 1.5  # (m) height top thermistor above slab - required to correct depth intervals
 
 start_date = '07/05/2022  00:00:00'
-validation_dates = ['24/08/2022  00:00:00', '17/09/2022  00:00:00']
+validation_dates = ['24/08/2022  00:00:00']  # , '17/09/2022  00:00:00'
 
-days = 80  # [days] time period for which to simulate
+days = 48  # [days] time period for which to simulate
 D = 15.  # [m] thickness of snow pack or ice slab
 n = 50  # [] number of layers
 T0 = -10  # [°C]  initial temperature of all layers
@@ -88,39 +94,39 @@ phi = np.empty([n+1, len(t)])  # array of the heat flux per time step, for each 
 refreeze = np.empty([2, len(t)])
 dt_plot = np.floor(len(t) / 40) * dt  # [s] time interval for which to plot temperature evolution
 
-# read the thermistor string data
-df_mt = pd.read_excel(measured_T)
-df_mt['dateUTC'] = pd.to_datetime(df_mt['DateTime (UTC)'])
-df_mt.set_index('dateUTC', inplace=True)
+if compare_to_measurements:
+    # read the thermistor string data
+    df_mt = pd.read_excel(measured_T)
+    df_mt['dateUTC'] = pd.to_datetime(df_mt['DateTime (UTC)'])
+    df_mt.set_index('dateUTC', inplace=True)
 
-# establish list of depth values
-depths = (df_mt.columns)[5:].values  # columns that contain depth values
-for ni, i in enumerate(depths):
-    depths[ni] = float(i.split(' ')[0])
+    # establish list of depth values
+    depths = (df_mt.columns)[5:].values  # columns that contain depth values
+    for ni, i in enumerate(depths):
+        depths[ni] = float(i.split(' ')[0])
 
-temperature = df_mt[df_mt.columns[5:]].to_numpy()
+    # make sure depth axis is positive as depth axis of model is also positive
+    # subtract height of top thermistor to adjust to positive depth below ice slab
+    depths = depths * (-1) - top_thermistor_height
 
-# ds = xr.Dataset(
-#     data_vars=dict(
-#         temperature=(['time', 'z'], temperature),
-#     ),
-#     coords=dict(
-#         z=depths,
-#         time=df_mt.index.values
-#     ),
-#     attrs=dict(description="thermistor data FS2, Greenland Ice Sheet."),
-# )
+    # Xarray DataArray of all temperature measurements
+    da = xr.DataArray(
+        data=df_mt[df_mt.columns[5:]].to_numpy(),
+        dims=['time', 'z'],
+        coords=dict(
+            z=depths,
+            time=df_mt.index.values
+        ),
+        attrs=dict(description="thermistor data FS2, Greenland Ice Sheet."),
+    )
 
-da = xr.DataArray(
-    data=temperature,
-    dims=['time', 'z'],
-    coords=dict(
-        z=depths,
-        time=df_mt.index.values
-    ),
-    attrs=dict(description="thermistor data FS2, Greenland Ice Sheet."),
-)
+    # prepare vector T_start of initial ice slab and firn temperatures
+    function1d = interpolate.interp1d(da.z.values, da.sel(time=start_date).values, fill_value='extrapolate')
+    T_start = function1d(y)
+    T_start[T_start > 0] = 0  # make sure no positive values in initial temperatures
+    T_start[0] = 0  # make sure top grid cell is at 0 °C
 
+    T = T_start  # finally set the temperature distribution to T_start
 
 # ============================================== calculations ===================================================
 
@@ -161,5 +167,9 @@ time_end_calc = datetime.datetime.now()
 print('runtime', time_end_calc - time_start)
 
 # plotting
-hf.plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
-            t_final, t, refreeze_c, output_dir, iwc)
+if compare_to_measurements:
+    hf.plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
+                                  t_final, t, refreeze_c, output_dir, iwc, da, validation_dates)
+else:
+    hf.plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
+                t_final, t, refreeze_c, output_dir, iwc)
