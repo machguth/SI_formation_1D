@@ -24,7 +24,7 @@ def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
 def irrw(iwc, n, dx, rho, T0):
     iw = np.ones(n) * dx * 1000 * rho / 1000 * iwc / 100
     if (T0 < 0) & (iwc > 0):
-        print('\n *** Warning: irreduible water content > 0 for negative T0. Setting irred. water content to 0. *** \n')
+        print('\n *** Warning: irreducible water cont. > 0 for negative T0. Setting irred. water content to 0. *** \n')
         iw *= 0
         iwc = 0
     return iw, iwc
@@ -157,7 +157,8 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
         ax[0].axhline(0, color='gray', ls=':')
         ax[0].axhline(D, color='gray', ls=':')
     for nvd, vd in enumerate(validation_dates):
-        ax[0].plot(da.sel(time=vd).values, da.z.values, color=colors_validation[nvd], lw=3, ls='--', label=vd)
+        ax[0].plot(da.sel(time=vd, method='nearest').values, da.z.values,
+                   color=colors_validation[nvd], lw=3, ls='--', label=vd)
     ax[0].invert_yaxis()
     ax[0].set_xlabel('Temperature (°C)')
     ax[0].set_ylabel('Depth (m)')

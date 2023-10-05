@@ -46,22 +46,22 @@ compare_to_measurements = True
 measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 1.5  # (m) height top thermistor above slab - required to correct depth intervals
 
-start_date = '07/05/2022  00:00:00'
-validation_dates = ['07/05/2022  00:00:00', '24/08/2022  00:00:00']  # , '17/09/2022  00:00:00'
+start_date = '2022/07/05 00:00:00'
+validation_dates = ['2022/07/05  00:00:00', '2022/08/01 00:00:00', '2022/08/24 00:00:00']  # '17/09/2022  00:00:00'
 
-days = 48  # [days] time period for which to simulate
+days = 50  # [days] time period for which to simulate
 D = 12.  # [m] thickness of snow pack or ice slab
-n = 50  # [] number of layers
+n = 300  # [] number of layers
 T0 = -10  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
-k = 2.25  # [W m-1 K-1] Thermal conductivity of ice at rho approx. 400 kg m-3 = 0.5; for ice at rho=917 kg m-3: 2.25
+k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho=917 kg m-3: 2.25
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
 rho = 900  # [kg m-3] Density of the snow or ice
 iwc = 0  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of the snow where it is water saturated
 t_final = 86400 * days  # [s] end of model run
-dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
+dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # prescribed either for the top or the bottom of the model domain (not both). Bottom is default (slushatbottom = True),
@@ -95,13 +95,14 @@ refreeze = np.empty([2, len(t)])
 dt_plot = np.floor(len(t) / 40) * dt  # [s] time interval for which to plot temperature evolution
 
 if compare_to_measurements:
+
     # read the thermistor string data
     df_mt = pd.read_excel(measured_T)
-    df_mt['dateUTC'] = pd.to_datetime(df_mt['DateTime (UTC)'])
+    df_mt['dateUTC'] = pd.to_datetime(df_mt['DateTime (UTC)'], format='%m.%d.%Y %H:%M')
     df_mt.set_index('dateUTC', inplace=True)
 
     # establish list of depth values
-    depths = (df_mt.columns)[5:].values  # columns that contain depth values
+    depths = df_mt.columns[5:].values  # columns that contain depth values
     for ni, i in enumerate(depths):
         depths[ni] = float(i.split(' ')[0])
 
@@ -121,7 +122,8 @@ if compare_to_measurements:
     )
 
     # prepare vector T_start of initial ice slab and firn temperatures
-    function1d = interpolate.interp1d(da.z.values, da.sel(time=start_date).values, fill_value='extrapolate')
+    function1d = interpolate.interp1d(da.z.values, da.sel(time=start_date, method='nearest').values,
+                                      fill_value='extrapolate')
     T_start = function1d(y)
     T_start[T_start > 0] = 0  # make sure no positive values in initial temperatures
     T_start[0] = 0  # make sure top grid cell is at 0 °C
