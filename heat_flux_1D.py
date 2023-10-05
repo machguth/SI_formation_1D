@@ -44,12 +44,12 @@ time_start = datetime.datetime.now()
 compare_to_measurements = True
 
 measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
-top_thermistor_height = 1.5  # (m) height top thermistor above slab - required to correct depth intervals
+top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 
-start_date = '2022/07/05 00:00:00'
-validation_dates = ['2022/07/05  00:00:00', '2022/08/01 00:00:00', '2022/08/24 00:00:00']  # '17/09/2022  00:00:00'
+start_date = '2022/07/05 18:30:00'
+validation_dates = ['2022/07/05  18:30:00', '2022/08/01 00:00:00', '2022/08/17 16:00:00', '2022/08/24 00:00:00']
 
-days = 50  # [days] time period for which to simulate
+days = 43  # [days] time period for which to simulate
 D = 12.  # [m] thickness of snow pack or ice slab
 n = 300  # [] number of layers
 T0 = -10  # [°C]  initial temperature of all layers

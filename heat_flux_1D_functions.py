@@ -163,6 +163,7 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
     ax[0].set_xlabel('Temperature (°C)')
     ax[0].set_ylabel('Depth (m)')
     ax[0].set_ylim(ax[0].get_ylim()[0], ax[0].get_ylim()[1])
+    ax[0].set_xlim(ax[0].get_xlim()[0], 0.5)
     ax[0].legend()
     if slushatbottom:
         ax[0].set_title('Temperature with snow depth')
