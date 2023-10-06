@@ -27,7 +27,7 @@
     - Numerical time steps, resolution of the depth axis and parameter alpha (k / (rho * Cp)) need to match,
       the smaller layer spacing and the larger alpha, the shorter the time steps need to be chosen
 
-TODO: thermal conductivity as a function of density, e.g. following Oster and Albert (2022), Calonne et al. (2011, 2019)
+To Do: thermal conductivity as function of density, e.g. following Oster and Albert (2022), Calonne et al. (2011, 2019)
 
 """
 
