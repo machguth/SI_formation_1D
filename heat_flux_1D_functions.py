@@ -182,10 +182,10 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
     else:
         ax[1].plot(t[:-1], phi[0, :-1], color='Tab:blue')
         ax[1].set_title('Heat flux and superimposed ice formation at slush-ice interface')
-    ax[1].set_xlabel('Days')
-    steps = np.round(days/12)
-    ax[1].set_xticks(np.arange(0, t_final + 1, 86400 * steps),
-                     (np.arange(0, t_final + 1, 86400 * steps) / 86400).astype(int))
+    ax[1].set_xlabel('Date')
+    # steps = np.round(days/12)
+    # ax[1].set_xticks(np.arange(0, t_final + 1, 86400 * steps),
+    #                  (np.arange(0, t_final + 1, 86400 * steps) / 86400).astype(int))
     ax[1].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
     ax[1].set_ylabel('Heat flux (W m$^{-2}$)', color='Tab:blue')
 
@@ -204,6 +204,6 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
     else:
         direction = 'top-SI'
 
-    plt.savefig(os.path.join(output_dir, '1D_heat_flux_' + str(int(days)) + 'd_'
+    plt.savefig(os.path.join(output_dir, 'test_1D_heat_flux_' + str(int(days)) + 'd_'
                              + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas.png'))
 

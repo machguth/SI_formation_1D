@@ -49,11 +49,12 @@ measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 
 start_date = '2022/07/05 18:30:00'
+end_date = '2022/08/17 16:00:00'
 validation_dates = ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/24 00:00:00']
 # '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 
-days = 43  # [days] time period for which to simulate
+#days = 43  # [days] time period for which to simulate
 D = 12.  # [m] thickness of snow pack or ice slab
 n = 300  # [] number of layers
 T0 = -10  # [°C]  initial temperature of all layers
@@ -64,7 +65,7 @@ L = 334000  # [J kg-1] Latent heat of water
 rho = 900  # [kg m-3] Density of the snow or ice
 iwc = 0  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of the snow where it is water saturated
-t_final = 86400 * days  # [s] end of model run
+#t_final = 86400 * days  # [s] end of model run
 dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
@@ -88,7 +89,10 @@ output_dir = r'C:\horst\modeling\lateralflow'
 # ============================================== Preparations ===================================================
 
 y = np.linspace(-dx/2, D+dx/2, n+2)  # vector of central points of each depth interval (=layer)
-t = np.arange(0, t_final, dt)  # vector of time steps
+t = np.arange(pd.to_datetime(start_date), pd.to_datetime(end_date), np.timedelta64(150, 's'))  # vector of time steps
+days = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days
+t_final = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).total_seconds()
+#t = np.arange(0, t_final, dt)  # vector of time steps
 # T = np.ones(n) * T0  # vector of temperatures for each layer
 # Vector of T for all layers (n + 2 (bottom and top)). Top set to zero, will then be updated each model step
 T = np.append(np.insert(np.ones(n) * T0, 0, 0), Tbottom)
@@ -179,3 +183,33 @@ if compare_to_measurements:
 else:
     hf.plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
                 t_final, t, refreeze_c, output_dir, iwc)
+
+# write output
+# Xarray DataArray of all simulated temperatures
+da_to = xr.DataArray(
+    data=T_evol.transpose(),
+    dims=['time', 'z'],
+    coords=dict(
+        z=y,
+        time=t
+    ),
+    attrs=dict(description="Simulated firn temperatures."),
+)
+
+# Xarray DataArray of all simulated daily refreezing rates
+da_ro = xr.DataArray(
+    data=refreeze[1,:],
+    dims=['time'],
+    coords=dict(
+        time=t
+    ),
+    attrs=dict(description="Simulated refreezing rates at the top of the modelling domain."),
+)
+
+da_to = da_to.resample(time='1D').mean()
+da_to = da_to.coarsen(z=2, boundary='trim').mean()
+
+da_ro = da_ro.resample(time='1D').sum()
+
+da_to.to_netcdf(path=output_dir + '/simulated_daily_T_evolution.nc')
+da_ro.to_netcdf(path=output_dir + '/simulated_daily_refreezing.nc')
