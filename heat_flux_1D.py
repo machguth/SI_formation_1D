@@ -193,8 +193,9 @@ da_to = xr.DataArray(
         z=y,
         time=t
     ),
-    attrs=dict(description="Simulated firn temperatures."),
+    attrs=dict(description="Simulated firn temperatures.", units='degree_Celsius'),
 )
+da_to.name = 'T'
 
 # Xarray DataArray of all simulated daily refreezing rates
 da_ro = xr.DataArray(
@@ -203,8 +204,11 @@ da_ro = xr.DataArray(
     coords=dict(
         time=t
     ),
-    attrs=dict(description="Simulated refreezing rates at the top of the modelling domain."),
+    attrs=dict(description="Simulated refreezing rates at the top of the modelling domain.",
+               units='mm w.e. per time step',
+               long_name='Refreezing R refers to water that refreezes, does not include surrounding matrix'),
 )
+da_ro.name = 'R'
 
 da_to = da_to.resample(time='1D').mean()
 da_to = da_to.coarsen(z=2, boundary='trim').mean()
