@@ -32,11 +32,15 @@ To Do: thermal conductivity as function of density, e.g. following Oster and Alb
 """
 
 import numpy as np
+# import cupy as cp
 import pandas as pd
 import xarray as xr
 import heat_flux_1D_functions as hf
 import datetime
 from scipy import interpolate
+import warnings
+
+warnings.filterwarnings("ignore")
 
 time_start = datetime.datetime.now()
 
@@ -45,7 +49,8 @@ time_start = datetime.datetime.now()
 # If yes, then measured temperatures are automatically used as starting conditions
 compare_to_measurements = True
 
-measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
+# measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
+measured_T = r'C:\Users\machg\switchdrive\_current\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 
 start_date = '2022/07/05 18:30:00'
@@ -83,8 +88,8 @@ bottom_boundary = False
 Tsurf = 0  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
-output_dir = r'C:\horst\modeling\lateralflow'
-# output_dir = r'D:\modelling\lateralflow'
+# output_dir = r'C:\horst\modeling\lateralflow'
+output_dir = r'C:\Users\machg\switchdrive\_current\1D_heat_conduction'
 
 # ============================================== Preparations ===================================================
 
