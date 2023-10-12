@@ -32,7 +32,6 @@ To Do: thermal conductivity as function of density, e.g. following Oster and Alb
 """
 
 import numpy as np
-# import cupy as cp
 import pandas as pd
 import xarray as xr
 import heat_flux_1D_functions as hf
@@ -59,7 +58,6 @@ validation_dates = ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/24 00:00:00']
 # '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 
-#days = 43  # [days] time period for which to simulate
 D = 12.  # [m] thickness of snow pack or ice slab
 n = 300  # [] number of layers
 T0 = -10  # [°C]  initial temperature of all layers
@@ -70,7 +68,6 @@ L = 334000  # [J kg-1] Latent heat of water
 rho = 900  # [kg m-3] Density of the snow or ice
 iwc = 0  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of the snow where it is water saturated
-#t_final = 86400 * days  # [s] end of model run
 dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
@@ -94,7 +91,7 @@ output_dir = r'C:\Users\machg\switchdrive\_current\1D_heat_conduction'
 # ============================================== Preparations ===================================================
 
 y = np.linspace(-dx/2, D+dx/2, n+2)  # vector of central points of each depth interval (=layer)
-t = np.arange(pd.to_datetime(start_date), pd.to_datetime(end_date), np.timedelta64(150, 's'))  # vector of time steps
+t = np.arange(pd.to_datetime(start_date), pd.to_datetime(end_date), np.timedelta64(dt, 's'))  # vector of time steps
 days = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days
 t_final = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).total_seconds()
 #t = np.arange(0, t_final, dt)  # vector of time steps
