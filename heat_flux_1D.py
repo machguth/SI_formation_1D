@@ -48,8 +48,13 @@ time_start = datetime.datetime.now()
 # If yes, then measured temperatures are automatically used as starting conditions
 compare_to_measurements = True
 
+# sensitivity study: multiply initial temperatures with a factor m in order to test sensitivity
+# to different initial slab temperatures. Multiplication is chosen because temperature at the
+# snow-slab interface is 0°C, which is preserved in multiplication
+m = 0.5  # []
+
 # measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
-measured_T = r'C:\Users\machg\switchdrive\_current\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
+measured_T = r'C:\Users\machguth\switchdrive\_current\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 
 start_date = '2022/07/05 18:30:00'
@@ -86,7 +91,7 @@ Tsurf = 0  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machg\switchdrive\_current\1D_heat_conduction'
+output_dir = r'C:\Users\machguth\switchdrive\_current\1D_heat_conduction'
 
 # ============================================== Preparations ===================================================
 
@@ -140,6 +145,10 @@ if compare_to_measurements:
 
     T = T_start  # finally set the temperature distribution to T_start
 
+    # Sensitivity study, multiply starting temperature with a certain factor, in order to test the influence
+    # of different temperatures on SI formation
+    T_start *= m
+
 # ============================================== calculations ===================================================
 
 # Water per layer (irreducible water content) [mm w.e. m-2 or kg m-2]
@@ -181,10 +190,10 @@ print('runtime', time_end_calc - time_start)
 # plotting
 if compare_to_measurements:
     hf.plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
-                                  t_final, t, refreeze_c, output_dir, iwc, da, validation_dates)
+                                  t_final, t, refreeze_c, output_dir, iwc, da, m, validation_dates)
 else:
     hf.plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
-                t_final, t, refreeze_c, output_dir, iwc)
+                t_final, t, refreeze_c, output_dir, m, iwc)
 
 # write output
 # Xarray DataArray of all simulated temperatures
@@ -217,5 +226,9 @@ da_to = da_to.coarsen(z=2, boundary='trim').mean()
 
 da_ro = da_ro.resample(time='1D').sum()
 
-da_to.to_netcdf(path=output_dir + '/simulated_daily_T_evolution.nc')
-da_ro.to_netcdf(path=output_dir + '/simulated_daily_refreezing.nc')
+if m == 1:
+    da_to.to_netcdf(path=output_dir + '/simulated_daily_T_evolution.nc')
+    da_ro.to_netcdf(path=output_dir + '/simulated_daily_refreezing.nc')
+else:
+    da_to.to_netcdf(path=output_dir + '/simulated_daily_T_evolution_Tmultiplied_by_{:.1f}'.format(m) + '.nc')
+    da_ro.to_netcdf(path=output_dir + '/simulated_daily_refreezing_Tmultiplied_by_{:.1f}'.format(m) + '.nc')

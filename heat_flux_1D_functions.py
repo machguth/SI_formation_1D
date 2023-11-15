@@ -75,7 +75,7 @@ def calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, 
 
 
 def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
-             t_final, t, refreeze_c, output_dir, iwc):
+             t_final, t, refreeze_c, output_dir, m, iwc):
 
     plt.rcParams.update({'font.size': 28})
     fig, ax = plt.subplots(2, figsize=(24, 20), gridspec_kw={'height_ratios': [3, 1]})
@@ -135,11 +135,12 @@ def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
         direction = 'top-SI'
 
     plt.savefig(os.path.join(output_dir, '1D_heat_flux_' + str(int(days)) + 'd_'
-                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '.png'))
+                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' +
+                             direction + 'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
 
 
 def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
-                               t_final, t, refreeze_c, output_dir, iwc, da, validation_dates):
+                               t_final, t, refreeze_c, output_dir, iwc, da, m, validation_dates):
 
     colors_validation = ['tab:red', 'tab:cyan', 'tab:purple', 'tab:orange', 'tab_pink']
     plt.rcParams.update({'font.size': 28})
@@ -205,5 +206,5 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
         direction = 'top-SI'
 
     plt.savefig(os.path.join(output_dir, 'test_1D_heat_flux_' + str(int(days)) + 'd_'
-                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas.png'))
-
+                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas_' +
+                             'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
