@@ -57,9 +57,10 @@ m = 0.5  # []
 measured_T = r'C:\Users\machguth\switchdrive\_current\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 
-start_date = '2022/07/05 18:30:00'
+start_date =  '2022/07/06 14:15:00' # '2022/07/05 18:30:00'
 end_date = '2022/08/17 16:00:00'
-validation_dates = ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
+# validation_dates = ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
+validation_dates = ['2022/07/06 14:15:00', '2022/08/17 16:00:00']
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/24 00:00:00']
 # '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 
