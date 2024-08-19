@@ -134,9 +134,15 @@ def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
     else:
         direction = 'top-SI'
 
-    plt.savefig(os.path.join(output_dir, '1D_heat_flux_' + str(int(days)) + 'd_'
-                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' +
-                             direction + 'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
+
+    if m == 1:
+        plt.savefig(os.path.join(output_dir, '1D_heat_flux_' + str(int(days)) + 'd_'
+                                 + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' +
+                                 direction + '.png'))
+    else:
+        plt.savefig(os.path.join(output_dir, '1D_heat_flux_' + str(int(days)) + 'd_'
+                                 + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' +
+                                 direction + 'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
 
 
 def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
@@ -205,6 +211,10 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
     else:
         direction = 'top-SI'
 
-    plt.savefig(os.path.join(output_dir, 'test_1D_heat_flux_' + str(int(days)) + 'd_'
-                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas_' +
-                             'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
+    if m == 1:
+        plt.savefig(os.path.join(output_dir, 'test_1D_heat_flux_' + str(int(days)) + 'd_'
+                                 + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas' +'.png'))
+    else:
+        plt.savefig(os.path.join(output_dir, 'test_1D_heat_flux_' + str(int(days)) + 'd_'
+                                 + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas_' +
+                                 'Tmultiplied_by_{:.1f}'.format(m) + '.png'))

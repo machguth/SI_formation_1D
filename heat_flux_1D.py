@@ -37,6 +37,7 @@ import xarray as xr
 import heat_flux_1D_functions as hf
 import datetime
 from scipy import interpolate
+import os
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -46,55 +47,62 @@ time_start = datetime.datetime.now()
 # ============================================== input ===================================================
 # Compare to measurements?
 # If yes, then measured temperatures are automatically used as starting conditions
-compare_to_measurements = True
+compare_to_measurements = False
 
 # sensitivity study: multiply initial temperatures with a factor m in order to test sensitivity
 # to different initial slab temperatures. Multiplication is chosen because temperature at the
 # snow-slab interface is 0°C, which is preserved in multiplication
-m = 0.5  # []
+m = 1.  # []
 
 # measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
-measured_T = r'C:\Users\machg\switchdrive\_current\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
+measured_T = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 
-start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00'
-end_date = '2022/09/04 16:00:00'
+# start and end date define the duration of the model run. The two variables are used also
+# when there is no comparison to measurements. Validation dates are only used in case of
+# comparison to measurements
+start_date = '2022/09/06 14:15:00'  # '2022/07/05 18:30:00'
+end_date = '2022/10/06 16:00:00'
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
 validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/24 00:00:00']
 # '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 
-D = 12.  # [m] thickness of snow pack or ice slab
-n = 300  # [] number of layers
-T0 = -10  # [°C]  initial temperature of all layers
+D = 1.2  # [m] thickness of snow pack or ice slab
+n = 50  # [] number of layers
+T0 = 0  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
 k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho=917 kg m-3: 2.25
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
-rho = 900  # [kg m-3] Density of the snow or ice
+rho = 400  # [kg m-3] Density of the snow or ice
 iwc = 0  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of the snow where it is water saturated
-dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
+dt = 100  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # prescribed either for the top or the bottom of the model domain (not both). Bottom is default (slushatbottom = True),
 # if set to False, then slush and SI formation is assumed to happen at the top.
-slushatbottom = False
+slushatbottom = True
 # specify if the bottom boundary condition should be applied or not (if not, temperatures at the bottom can fluctuate
 # freely). If there is no bottom boundary condition, bottom heat flux will equal zero
-bottom_boundary = False
+bottom_boundary = True
 
 # -20  # [°C] boundary condition temperature top
 # can either be a scalar (e.g. -20 °C) or an array of length days + 1
 # Tsurf = np.linspace(-20, -0, days + 1)
 # Tsurf = 'sine'
-Tsurf = 0  # [°C] Top boundary condition
+Tsurf = -10  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machg\switchdrive\_current\1D_heat_conduction'
+output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
 
 # ============================================== Preparations ===================================================
+# check if output folder exists, if no create
+isdir = os.path.isdir(output_dir)
+if not isdir:
+    os.mkdir(output_dir)
 
 y = np.linspace(-dx/2, D+dx/2, n+2)  # vector of central points of each depth interval (=layer)
 t = np.arange(pd.to_datetime(start_date), pd.to_datetime(end_date), np.timedelta64(dt, 's'))  # vector of time steps
