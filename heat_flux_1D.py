@@ -27,7 +27,7 @@
     - Numerical time steps, resolution of the depth axis and parameter alpha (k / (rho * Cp)) need to match,
       the smaller layer spacing and the larger alpha, the shorter the time steps need to be chosen
 
-To Do: thermal conductivity as function of density, e.g. following Oster and Albert (2022), Calonne et al. (2011, 2019)
+ToDo: thermal conductivity as function of density, e.g. following Oster and Albert (2022), Calonne et al. (2011, 2019)
 
 """
 
@@ -68,11 +68,11 @@ validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/24 00:00:00']
 # '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 
-D = 1.2  # [m] thickness of snow pack or ice slab
-n = 50  # [] number of layers
+D = 0.3  # [m] thickness of snow pack or ice slab
+n = 20  # [] number of layers
 T0 = 0  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
-k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho=917 kg m-3: 2.25
+k = 0.5  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho=917 kg m-3: 2.25
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
 rho = 400  # [kg m-3] Density of the snow or ice
