@@ -47,12 +47,12 @@ time_start = datetime.datetime.now()
 # ============================================== input ===================================================
 # Compare to measurements?
 # If yes, then measured temperatures are automatically used as starting conditions
-compare_to_measurements = False
+compare_to_measurements = True
 
 # sensitivity study: multiply initial temperatures with a factor m in order to test sensitivity
 # to different initial slab temperatures. Multiplication is chosen because temperature at the
 # snow-slab interface is 0°C, which is preserved in multiplication
-m = 1.  # []
+m = 1.5  # []
 
 # measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
 measured_T = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
@@ -61,42 +61,42 @@ top_thermistor_height = 2.15  # (m) height top thermistor above slab - required 
 # start and end date define the duration of the model run. The two variables are used also
 # when there is no comparison to measurements. Validation dates are only used in case of
 # comparison to measurements
-start_date = '2022/09/06 14:15:00'  # '2022/07/05 18:30:00'
-end_date = '2022/10/06 16:00:00'
+start_date = '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
+end_date = '2022/12/31 23:30:00'
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
 validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/24 00:00:00']
 # '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 
-D = 0.3  # [m] thickness of snow pack or ice slab
-n = 20  # [] number of layers
-T0 = 0  # [°C]  initial temperature of all layers
+D = 12  # [m] thickness of snow pack or ice slab
+n = 300  # [] number of layers
+T0 = -10  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
-k = 0.5  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho=917 kg m-3: 2.25
+k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho=917 kg m-3: 2.25
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
-rho = 400  # [kg m-3] Density of the snow or ice
+rho = 900  # [kg m-3] Density of the snow or ice
 iwc = 0  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of the snow where it is water saturated
-dt = 100  # [s] numerical time step, needs to be a fraction of 86400 s
+dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # prescribed either for the top or the bottom of the model domain (not both). Bottom is default (slushatbottom = True),
 # if set to False, then slush and SI formation is assumed to happen at the top.
-slushatbottom = True
+slushatbottom = False
 # specify if the bottom boundary condition should be applied or not (if not, temperatures at the bottom can fluctuate
 # freely). If there is no bottom boundary condition, bottom heat flux will equal zero
-bottom_boundary = True
+bottom_boundary = False
 
 # -20  # [°C] boundary condition temperature top
 # can either be a scalar (e.g. -20 °C) or an array of length days + 1
 # Tsurf = np.linspace(-20, -0, days + 1)
 # Tsurf = 'sine'
-Tsurf = -10  # [°C] Top boundary condition
+Tsurf = 0  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\bottom-up_R2'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create
