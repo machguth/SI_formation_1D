@@ -34,6 +34,8 @@ ToDo: thermal conductivity as function of density, e.g. following Oster and Albe
 import numpy as np
 import pandas as pd
 import xarray as xr
+from bokeh.core.property.primitive import Float
+
 import heat_flux_1D_functions as hf
 import datetime
 from scipy import interpolate
@@ -47,21 +49,34 @@ time_start = datetime.datetime.now()
 # ============================================== input ===================================================
 # Compare to measurements?
 # If yes, then measured temperatures are automatically used as starting conditions
-compare_to_measurements = True
+compare_to_measurements = False
+
+# Use an initial Temperature profile as starting condition? If this option is chosen then
+# compare_to_measurements is set to False but an intial profile is still being read and used
+use_initial_T_profile = True
 
 # sensitivity study: multiply initial temperatures with a factor m in order to test sensitivity
 # to different initial slab temperatures. Multiplication is chosen because temperature at the
 # snow-slab interface is 0°C, which is preserved in multiplication
-m = 1.5  # []
+m = 1.0  # []
 
 # measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
 measured_T = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 
+# initial T profile, only to be used if use_initial_T_profile = True
+# Here used is the measured FS2 T-profile from 2022/07/06 14:15:00
+initial_Tprofile =  r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_optimal_initial_Tprofile.xlsx'
+# specify  height of the thermistor that is closest to the slab surface. Needed to discard all T measured above
+# the slab. Any T above the slab (= snowpack T) will be set to 0 °C.
+height_top_of_slab_thermistor = 2.15  # (m) Keep unchanged if FS2 T-profile from 2022/07/06 14:15:00
+T10m_measured_FS2 = -10.06  # (°C) T in the reference profile at 10 m depth - Keep unchanged if FS2 T-profile from 2022/07/06 14:15:00
+T10m_local = -18  # (°C) Temperature at 10 m depth at any given grid cell, according to Vandecrux et al. (2023)
+
 # start and end date define the duration of the model run. The two variables are used also
 # when there is no comparison to measurements. Validation dates are only used in case of
 # comparison to measurements
-start_date = '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
+start_date = '2022/07/06 14:15:00' # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
 end_date = '2022/12/31 23:30:00'
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
 validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']
@@ -96,13 +111,17 @@ Tsurf = 0  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\bottom-up_R2'
+output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create
 isdir = os.path.isdir(output_dir)
 if not isdir:
     os.mkdir(output_dir)
+
+# make sure that use_initial_T_profile = True is only used with compare_to_measurements = False
+if use_initial_T_profile:
+    compare_to_measurements = False
 
 y = np.linspace(-dx/2, D+dx/2, n+2)  # vector of central points of each depth interval (=layer)
 t = np.arange(pd.to_datetime(start_date), pd.to_datetime(end_date), np.timedelta64(dt, 's'))  # vector of time steps
@@ -156,7 +175,36 @@ if compare_to_measurements:
 
     # Sensitivity study, multiply starting temperature with a certain factor, in order to test the influence
     # of different temperatures on SI formation
-    T_start *= m
+    T *= m
+
+if use_initial_T_profile:
+    # read the thermistor string data
+    df_mt = pd.read_excel(initial_Tprofile)
+    # df_mt['dateUTC'] = pd.to_datetime(df_mt['DateTime (UTC)'], format='%m.%d.%Y %H:%M')
+    # df_mt.set_index('dateUTC', inplace=True)
+
+    # establish list of depth values
+    depths = df_mt.columns.values  # columns that contain depth values
+    for ni, i in enumerate(depths):
+        depths[ni] = float(i.split(' ')[0])
+
+    # make sure depth axis is positive as depth axis of model is also positive
+    # subtract height of top thermistor to adjust to positive depth below ice slab
+    depths = depths * (-1) - height_top_of_slab_thermistor
+
+    # prepare vector T_start of initial ice slab and firn temperatures
+    function1d = interpolate.interp1d(depths, df_mt, fill_value='extrapolate')
+
+    T_start = function1d(y)[0].astype(float)
+    T_start[T_start > 0] = 0  # make sure no positive values in initial temperatures
+    T_start[0] = 0  # make sure top grid cell is at 0 °C
+
+    T = T_start  # finally set the temperature distribution to T_start
+
+    # multiply starting temperature with ratio between 10 m firn temperature in the initial T profile
+    # and the 10 m firn T in the Grid cell that is simulated (T in grid cell according to Vandecrux et al., 2023)
+    T *= T10m_local/T10m_measured_FS2
+
 
 # ============================================== calculations ===================================================
 
