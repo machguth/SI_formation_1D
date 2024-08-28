@@ -60,7 +60,7 @@ use_initial_T_profile = True
 # snow-slab interface is 0°C, which is preserved in multiplication
 m = 1.0  # []
 
-# measured_T = r'C:\horst\modeling\lateralflow\D6050043-logged_data(FS2)_v2.xlsx'
+# The following two variables are only relevant if compare_to_measurements = True AND use_initial_T_profile = False
 measured_T = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 
