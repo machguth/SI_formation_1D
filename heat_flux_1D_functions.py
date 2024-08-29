@@ -3,6 +3,9 @@ Intended for use in snow and ice and with a
 Calculates heat conduction and the amount of superimposed ice that forms
 
 This file contains a variety of functions that area called by heat_flux_1D.py
+
+Author: Horst Machguth horst.machguth@unifr.ch
+        Andrew Tedstone andrew.tedstone@unil.ch
 """
 
 
@@ -10,7 +13,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
+import xarray as xr
 
+# CONSTANTS
+Cp = 2090    # [J kg-1 K-1] Specific heat capacity of ice
+L = 334000   # [J kg-1] Latent heat of water
 
 def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
     if days/365 != years:
@@ -74,8 +81,129 @@ def calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, 
     return T_evol, phi, refreeze
 
 
+def run_calculation(D, dx, dt, t, T0, rho, k, iwc, por, Tbottom, Tsurf, slushatbottom):
+    """
+    Convenience function to run calculations through time.
+    
+    :param D: Thickness of snow pack or ice slab [m]
+    :param dx: Desired layer thickness [m] 
+    :param dt: Timestep [s]
+    :param t: Array of timestamps
+    :param T0: initial temperature of all layers [degC]
+    :param rho: Density of snow or ice [kg m-3]
+    :param k: Thermal conductivity of ice or snow:
+    :param iwc: Irreducible water content [% of mass]
+    :param por: Porosity of snow where it is water-saturated []
+    :param Tbottom: Bottom boundary condition, [None or degC]
+    :param Tsurf: (Surface) temperature at top boundary [degC]
+    :param slushatbottom: if True, refreezing at bottom boundary; if False, refreezing at top [bool]
+
+    :returns: (t, y, T_evol, refreeze, phi)
+        y : depth intervals
+        T_evol : temperatures
+        refreeze : refreezing at bottom (0) and top (1)
+        refreeze_c : cumulative refreezing at bottom (0) and top (1)
+        phi : heat flux
+
+    Usage notes:
+
+        Tsurf can be a float or an array of length equal to ts.
+    """
+
+    # Number of layers
+    n = int(np.round(D / dx))
+
+    # vector of central points of each depth interval (=layer)
+    y = np.linspace(-dx/2, D+dx/2, n+2)  
+
+    # Vertical temperature profile at a given timestamp
+    T = np.append(np.insert(np.ones(n) * T0, 0, 0), Tbottom)
+    
+    # array of temperatures for each layer and time step
+    T_evol = np.ones([n+2, len(t)]) * T0  
+    
+    # derivative of temperature at each node
+    dTdt = np.empty(n)  
+
+    # array of the heat flux per time step, for each layer and time step
+    phi = np.empty([n+1, len(t)])  
+    
+    refreeze = np.empty([2, len(t)])
+    
+    # Water per layer (irreducible water content) [mm w.e. m-2 or kg m-2]
+    # This function also sets irreducible water content to 0 for all layers that have initial T < 0
+    iw, iwc = irrw(iwc, n, dx, rho, T0)
+    
+    # Vector of thermal diffusivity [m2 s-1]
+    alpha = alpha_update(k, rho, Cp, n, iw)
+    
+    # calculation of temperature profile over time
+    if Tbottom is None:
+        T_evol, phi, refreeze = calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol,
+                                             phi, k, refreeze, L, iw, rho, Cp)
+    else:
+        T_evol, phi, refreeze, iw = calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
+                                                   T_evol, phi, k, refreeze, L, iw, rho, Cp)
+    
+    # cumulative sum of refrozen water
+    refreeze_c = np.cumsum(refreeze, axis=1)
+    # and correct for the fact that water occupies only the pore space
+    refreeze_c /= por
+    
+    return (y, T_evol, refreeze, refreeze_c, phi)
+
+
+
+def temperatures_to_da(y, t, T_evol, save_path=None):
+    # Xarray DataArray of all simulated temperatures
+    da_to = xr.DataArray(
+        data=T_evol.transpose(),
+        dims=['time', 'z'],
+        coords=dict(
+            z=y,
+            time=t
+        ),
+        attrs=dict(description="Simulated firn temperatures.", units='degree_Celsius'),
+    )
+    da_to.name = 'T'
+    da_to = da_to.resample(time='1D').mean()
+    da_to = da_to.coarsen(z=2, boundary='trim').mean()
+
+    if save_path is not None:
+        da_to.to_netcdf(save_path)
+
+    return da_to
+
+
+def refreeze_to_da(t, refreeze, slushatbottom, save_path=None):
+    # Xarray DataArray of all simulated daily refreezing rates
+    if slushatbottom:
+        d = refreeze[0,:]
+        w = 'bottom'
+    else:
+        d = refreeze[1,:]
+        w = 'top'
+    da_ro = xr.DataArray(
+        data=d,
+        dims=['time'],
+        coords=dict(
+            time=t
+        ),
+        attrs=dict(description="Simulated refreezing rates at the %s of the modelling domain." %w,
+                   units='mm w.e. per time step',
+                   long_name='Refreezing R refers to water that refreezes, does not include surrounding matrix'),
+    )
+    da_ro.name = 'R'
+    da_ro = da_ro.resample(time='1D').sum()
+
+    if save_path is not None:
+        da_ro.to_netcdf(save_path)
+
+    return da_ro
+
+
 def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
-             t_final, t, refreeze_c, output_dir, m, iwc):
+             t_final, t, refreeze_c, output_dir, m, iwc, save_to=None):
 
     plt.rcParams.update({'font.size': 28})
     fig, ax = plt.subplots(2, figsize=(24, 20), gridspec_kw={'height_ratios': [3, 1]})
@@ -114,8 +242,8 @@ def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
         ax[1].set_title('Heat flux and superimposed ice formation at slush-ice interface')
     ax[1].set_xlabel('Days')
     steps = np.round(days/12)
-    ax[1].set_xticks(np.arange(0, t_final + 1, 86400 * steps),
-                     (np.arange(0, t_final + 1, 86400 * steps) / 86400).astype(int))
+    # ax[1].set_xticks(np.arange(0, t_final + 1, 86400 * steps),
+    #                  (np.arange(0, t_final + 1, 86400 * steps) / 86400).astype(int))
     ax[1].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
     ax[1].set_ylabel('Heat flux (W m$^{-2}$)', color='Tab:blue')
 
@@ -135,15 +263,11 @@ def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
         direction = 'top-SI'
 
 
-    if m == 1:
-        plt.savefig(os.path.join(output_dir, '1D_heat_flux_' + str(int(days)) + 'd_'
-                                 + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' +
-                                 direction + '.png'))
-    else:
-        plt.savefig(os.path.join(output_dir, '1D_heat_flux_' + str(int(days)) + 'd_'
-                                 + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' +
-                                 direction + 'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
-
+    if save_to is not None:
+        plt.savefig(save_to)
+    
+    return
+    
 
 def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
                                t_final, t, refreeze_c, output_dir, iwc, da, m, validation_dates):
