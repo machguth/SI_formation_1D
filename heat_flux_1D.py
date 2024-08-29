@@ -34,7 +34,6 @@ ToDo: thermal conductivity as function of density, e.g. following Oster and Albe
 import numpy as np
 import pandas as pd
 import xarray as xr
-from bokeh.core.property.primitive import Float
 
 import heat_flux_1D_functions as hf
 import datetime
@@ -55,44 +54,41 @@ compare_to_measurements = False
 # compare_to_measurements is set to False but an intial profile is still being read and used
 use_initial_T_profile = True
 
+# The following four variables are only relevant if compare_to_measurements = True AND use_initial_T_profile = False
+measured_T = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
+top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
+# Dates for which the measured T-profile will be plotted into the output figures
+validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']  # ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
+# ['2022/07/05 18:30:00', '2022/08/24 00:00:00'] # '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 # sensitivity study: multiply initial temperatures with a factor m in order to test sensitivity
 # to different initial slab temperatures. Multiplication is chosen because temperature at the
 # snow-slab interface is 0°C, which is preserved in multiplication
 m = 1.0  # []
 
-# The following two variables are only relevant if compare_to_measurements = True AND use_initial_T_profile = False
-measured_T = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
-top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
-
-# initial T profile, only to be used if use_initial_T_profile = True
+# initial T profile, is only used if use_initial_T_profile = True
 # Here used is the measured FS2 T-profile from 2022/07/06 14:15:00
-initial_Tprofile =  r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_optimal_initial_Tprofile.xlsx'
+initial_Tprofile = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_optimal_initial_Tprofile.xlsx'
 # specify  height of the thermistor that is closest to the slab surface. Needed to discard all T measured above
 # the slab. Any T above the slab (= snowpack T) will be set to 0 °C.
 height_top_of_slab_thermistor = 2.15  # (m) Keep unchanged if FS2 T-profile from 2022/07/06 14:15:00
-T10m_measured_FS2 = -10.06  # (°C) T in the reference profile at 10 m depth - Keep unchanged if FS2 T-profile from 2022/07/06 14:15:00
-T10m_local = -18  # (°C) Temperature at 10 m depth at any given grid cell, according to Vandecrux et al. (2023)
+T10m_measured_FS2 = -10.06  # (°C) T in the init. profile at 10 m - Keep unchanged if FS2 T from 2022/07/06 14:15:00
+T10m_local = -12  # (°C) Temperature at 10 m depth at any given grid cell, according to Vandecrux et al. (2023)
 
 # start and end date define the duration of the model run. The two variables are used also
-# when there is no comparison to measurements. Validation dates are only used in case of
-# comparison to measurements
-start_date = '2022/07/06 14:15:00' # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
+# when there is no comparison to measurements.
+start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
 end_date = '2022/12/31 23:30:00'
-# validation_dates = ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
-validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']
-# validation_dates = ['2022/07/05 18:30:00', '2022/08/24 00:00:00']
-# '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 
-D = 12  # [m] thickness of snow pack or ice slab
+D = 12  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
 n = 300  # [] number of layers
-T0 = -10  # [°C]  initial temperature of all layers
+T0 = -10  # [°C]  initial temperature of all layers - ignored if compare_to_measurements or use_initial_T_profile
 dx = D/n  # [m] layer thickness
-k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho=917 kg m-3: 2.25
+k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho 917 kg m-3 = 2.25
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
 rho = 900  # [kg m-3] Density of the snow or ice
 iwc = 0  # [% of mass] Irreducible water content in snow
-por = 0.4  # [] porosity of the snow where it is water saturated
+por = 0.4  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
 dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
@@ -108,10 +104,12 @@ bottom_boundary = False
 # Tsurf = np.linspace(-20, -0, days + 1)
 # Tsurf = 'sine'
 Tsurf = 0  # [°C] Top boundary condition
-Tbottom = 0  # [°C] bottom boundary condition
+# bottom boundary condition, initial value of T-profile. Overwritten if compare_to_measurements or use_initial_T_profile
+Tbottom = 0  # [°C]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+# output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+output_dir = r'O:\test_1D_heat_conduction'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create
