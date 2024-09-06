@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 import os
 import sys
 import xarray as xr
+from scipy import interpolate
+
+import pdb
 
 # CONSTANTS
 Cp = 2090    # [J kg-1 K-1] Specific heat capacity of ice
@@ -30,16 +33,50 @@ def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
 
 def irrw(iwc, n, dx, rho, T0):
     iw = np.ones(n) * dx * 1000 * rho / 1000 * iwc / 100
-    if (T0 < 0) & (iwc > 0):
-        print('\n *** Warning: irreducible water cont. > 0 for negative T0. Setting irred. water content to 0. *** \n')
-        iw *= 0
-        iwc = 0
+    if isinstance(T0, (int, float)):
+        if (T0 < 0) & (iwc > 0):
+            print('\n *** Warning: irreducible water cont. > 0 for negative T0. Setting irred. water content to 0. *** \n')
+            iw *= 0
+            iwc = 0
+    elif isinstance(T0, np.ndarray):
+        iw *= T0[1:-1] > 0
+        # Does iwc also need changing?
+    else:
+        raise ValueError('Unknown T0 variable type.')
+
     return iw, iwc
 
 
 def alpha_update(k, rho, Cp, n, iw):
     alpha = np.ones(n) * (k / (rho * Cp)) * (iw == 0)
     return alpha
+
+
+def scale_initial_profile_10m(y, t_profile, t_profile_10m, t_scale_10m):
+    """ Given an initial temperature profile and a 10 m temperature, rescale the T profile accordingly. 
+
+    :param y: np.array of depth intervals over which the calculations are run
+    :param t_profile: pd.Series of temperatures, index of depth (metres)
+    :param t_10m: float of 10 metre depth temperature
+
+    :returns: pd.Series adjusted temperatures
+    """
+
+    # prepare vector T_start of initial ice slab and firn temperatures
+    function1d = interpolate.interp1d(t_profile.index, t_profile, fill_value='extrapolate')
+
+    T_start = function1d(y).astype(float)
+    T_start[T_start > 0] = 0  # make sure no positive values in initial temperatures
+    T_start[0] = 0  # make sure top grid cell is at 0 °C
+
+    T = T_start  # finally set the temperature distribution to T_start
+
+    # multiply starting temperature with ratio between 10 m firn temperature in the initial T profile
+    # and the 10 m firn T in the Grid cell that is simulated (T in grid cell according to Vandecrux et al., 2023)
+    T *= t_scale_10m/t_profile_10m
+
+    return T
+
 
 
 def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, rho, Cp):
@@ -81,22 +118,30 @@ def calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, 
     return T_evol, phi, refreeze
 
 
-def run_calculation(D, dx, dt, t, T0, rho, k, iwc, por, Tbottom, Tsurf, slushatbottom):
+def depth_intervals(D, dx, n=None):
+    if n is None:
+        n = int(np.round(D / dx))
+    return np.linspace(-dx/2, D+dx/2, n+2)  
+
+
+def run_calculation(D, dx, dt, t, T0, rho, k, iwc, por, Tbottom, Tsurf, slushatbottom,
+    y=None):
     """
     Convenience function to run calculations through time.
     
-    :param D: Thickness of snow pack or ice slab [m]
-    :param dx: Desired layer thickness [m] 
-    :param dt: Timestep [s]
-    :param t: Array of timestamps
-    :param T0: initial temperature of all layers [degC]
-    :param rho: Density of snow or ice [kg m-3]
-    :param k: Thermal conductivity of ice or snow:
-    :param iwc: Irreducible water content [% of mass]
-    :param por: Porosity of snow where it is water-saturated []
-    :param Tbottom: Bottom boundary condition, [None or degC]
-    :param Tsurf: (Surface) temperature at top boundary [degC]
-    :param slushatbottom: if True, refreezing at bottom boundary; if False, refreezing at top [bool]
+    :param D: float, Thickness of snow pack or ice slab [m]
+    :param dx: float, Desired layer thickness [m] 
+    :param dt: int, Timestep [s]
+    :param t: np.array, timestamps
+    :param T0: np.array or float, initial temperature of all layers [degC]
+    :param rho: float, Density of snow or ice [kg m-3]
+    :param k: float, Thermal conductivity of ice or snow:
+    :param iwc: float, Irreducible water content [% of mass]
+    :param por: float, Porosity of snow where it is water-saturated []
+    :param Tbottom: float or None, Bottom boundary condition, [None or degC]
+    :param Tsurf: float, (Surface) temperature at top boundary [degC]
+    :param slushatbottom: bool, if True, refreezing at bottom boundary; if False, refreezing at top [bool]
+    :param y: None or np.array. If provided, an array of depth intervals to run calculations over. Then D, dx are ignored.
 
     :returns: (t, y, T_evol, refreeze, phi)
         y : depth intervals
@@ -110,18 +155,42 @@ def run_calculation(D, dx, dt, t, T0, rho, k, iwc, por, Tbottom, Tsurf, slushatb
         Tsurf can be a float or an array of length equal to ts.
     """
 
-    # Number of layers
-    n = int(np.round(D / dx))
+    if y is None:
+        # vector of central points of each depth interval (=layer)
+        y = depth_intervals(D, dx)
+    else:
+        assert isinstance(y, np.ndarray)
+        dx = y[1] - y[0]
 
-    # vector of central points of each depth interval (=layer)
-    y = np.linspace(-dx/2, D+dx/2, n+2)  
+    n = len(y) - 2
 
-    # Vertical temperature profile at a given timestamp
-    T = np.append(np.insert(np.ones(n) * T0, 0, 0), Tbottom)
-    
-    # array of temperatures for each layer and time step
-    T_evol = np.ones([n+2, len(t)]) * T0  
-    
+    # Is Tsurf a single value or a time series?
+    if isinstance(Tsurf, (float, int)):
+        # If single value of Tsurf provided then extend it over the run duration
+        Tsurf = np.ones(len(t)) * Tsurf
+
+    if Tbottom is None:
+        bottom_boundary = 'open'
+        # Extend the Temperature array using T0
+        if isinstance(T0, np.ndarray):
+            Tbottom = T0[-1]
+        else:
+            Tbottom = T0
+    else:
+        bottom_boundary = 'closed'
+
+    # Set up T and T_evol according to the inputs provided    
+    if isinstance(T0, (float, int)):
+        # If single initial temperature provided then extend it over depth (and time)
+
+        # Vertical temperature profile at a given timestamp, with specified Tbottom
+        T = np.append(np.insert(np.ones(n) * T0, 0, 0), Tbottom)
+        T_evol = np.ones([n+2, len(t)]) * T0  # array of temperatures for each layer and time step
+    else:
+        T = T0
+        # array of temperatures for each layer and time step
+        T_evol = np.repeat([T], len(t), axis=0).T #np.ones([n+2, len(t)]) * T0  
+
     # derivative of temperature at each node
     dTdt = np.empty(n)  
 
@@ -138,10 +207,10 @@ def run_calculation(D, dx, dt, t, T0, rho, k, iwc, por, Tbottom, Tsurf, slushatb
     alpha = alpha_update(k, rho, Cp, n, iw)
     
     # calculation of temperature profile over time
-    if Tbottom is None:
+    if bottom_boundary == 'open':
         T_evol, phi, refreeze = calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol,
                                              phi, k, refreeze, L, iw, rho, Cp)
-    else:
+    elif bottom_boundary == 'closed':
         T_evol, phi, refreeze, iw = calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
                                                    T_evol, phi, k, refreeze, L, iw, rho, Cp)
     
