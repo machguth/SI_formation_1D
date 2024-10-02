@@ -55,7 +55,7 @@ compare_to_measurements = False
 use_initial_T_profile = True
 
 # The following four variables are only relevant if compare_to_measurements = True AND use_initial_T_profile = False
-measured_T = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
+measured_T = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
 top_thermistor_height = 2.15  # (m) height top thermistor above slab - required to correct depth intervals
 # Dates for which the measured T-profile will be plotted into the output figures
 validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']  # ['2022/07/05 18:30:00', '2022/08/17 16:00:00']
@@ -67,7 +67,7 @@ m = 1.0  # []
 
 # initial T profile, is only used if use_initial_T_profile = True
 # Here used is the measured FS2 T-profile from 2022/07/06 14:15:00
-initial_Tprofile = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_optimal_initial_Tprofile.xlsx'
+initial_Tprofile = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_optimal_initial_Tprofile.xlsx'
 # specify  height of the thermistor that is closest to the slab surface. Needed to discard all T measured above
 # the slab. Any T above the slab (= snowpack T) will be set to 0 °C.
 height_top_of_slab_thermistor = 2.15  # (m) Keep unchanged if FS2 T-profile from 2022/07/06 14:15:00
@@ -108,8 +108,8 @@ Tsurf = 0  # [°C] Top boundary condition
 Tbottom = 0  # [°C]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-# output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
-output_dir = r'O:\test_1D_heat_conduction'
+output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+# output_dir = r'O:\test_1D_heat_conduction'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create
