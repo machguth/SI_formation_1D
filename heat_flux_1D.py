@@ -68,7 +68,7 @@ validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']
 # validation_dates = ['2022/07/05 18:30:00', '2022/08/24 00:00:00']
 # '2022/08/01 00:00:00', '2022/08/24 00:00:00'
 
-D = 0.3  # [m] thickness of snow pack or ice slab
+D = 0.6  # [m] thickness of snow pack or ice slab
 n = 20  # [] number of layers
 T0 = 0  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
@@ -96,7 +96,7 @@ Tsurf = -10  # [°C] Top boundary condition
 Tbottom = 0  # [°C] bottom boundary condition
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+output_dir = r'/scratch/rlim_retention_scratch/1D_heat_flux_modelling'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create
@@ -104,19 +104,68 @@ isdir = os.path.isdir(output_dir)
 if not isdir:
     os.mkdir(output_dir)
 
+
+# +
+def index_to_dt(df, add_2000=False):
+    if add_2000:
+        add = 2000
+    else:
+        add = 0
+    df.index = pd.to_datetime(((add + df['Year']) * 1000 + df['Day']) * 100 + df['Hour'] , format='%Y%j%H')
+    return df
+
+dva_tsurf = pd.read_csv('/Users/atedston/Dropbox/work/data/dva_sebm/output/Tsurf(C)_IP_2023_bins.txt', 
+                       delim_whitespace=True)
+dva_tsurf = index_to_dt(dva_tsurf)
+dva_tsurf_1700 = dva_tsurf['1700m']['2022-09-18':'2022-12-01']
+# -
+
+dva_tsurf['1700m']['2022-09-18':'2022-12-01'].plot()
+dva_tsurf['1800m']['2022-09-18':'2022-12-01'].plot()
+dva_tsurf['1900m']['2022-09-18':'2022-12-01'].plot()
+
+# +
+# dva_tsurf.filter?
+# -
+
+tsurf_interp = dva_tsurf.filter(items=['1700m','1800m','1900m'], axis=1)
+
+
+def lr(data):
+    p1, p2 = np.polyfit([1700,1800,1900],data, 1)
+    data['p1'] = p1
+    data['p2'] = p2
+    return data
+tsurf_interp.apply(lr, axis=1)
+
+np.polyfit([1700,1800,1900],dva_tsurf.filter(items=['1700m','1800m','1900m'], axis=1).loc['2022-09-19'].iloc[0], 1)
+
+dva_tsurf.filter(items=['1700m','1800m','1900m'], axis=1).loc['2022-09-19'].iloc[0]
+
+np.polyfit([
+
+ts = dva_tsurf_1700.resample('100s').interpolate()
+Tsurf = np.array(ts)
+t = ts.index
+t_final =( t[-1] - t[0]).total_seconds()
+days = ( t[-1] - t[0]).days
+
+# +
 y = np.linspace(-dx/2, D+dx/2, n+2)  # vector of central points of each depth interval (=layer)
-t = np.arange(pd.to_datetime(start_date), pd.to_datetime(end_date), np.timedelta64(dt, 's'))  # vector of time steps
-days = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days
-t_final = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).total_seconds()
-#t = np.arange(0, t_final, dt)  # vector of time steps
-# T = np.ones(n) * T0  # vector of temperatures for each layer
-# Vector of T for all layers (n + 2 (bottom and top)). Top set to zero, will then be updated each model step
+
+#t = np.arange(pd.to_datetime(start_date), pd.to_datetime(end_date), np.timedelta64(dt, 's'))  # vector of time steps
+#days = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days
+#t_final = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).total_seconds()
+
 T = np.append(np.insert(np.ones(n) * T0, 0, 0), Tbottom)
 T_evol = np.ones([n+2, len(t)]) * T0  # array of temperatures for each layer and time step
 dTdt = np.empty(n)  # derivative of temperature at each node
 phi = np.empty([n+1, len(t)])  # array of the heat flux per time step, for each layer and time step
 refreeze = np.empty([2, len(t)])
 dt_plot = np.floor(len(t) / 40) * dt  # [s] time interval for which to plot temperature evolution
+# -
+
+Tsurf.shape
 
 if compare_to_measurements:
 
@@ -172,7 +221,11 @@ if isinstance(Tsurf, int):
     Tsurf = np.ones(len(t)) * Tsurf
 elif isinstance(Tsurf, str):
     Tsurf = hf.tsurf_sine(days, t_final, dt, years=5, Tmean=-20, Tamplitude=10)
+elif isinstance(Tsurf, np.ndarray):
+    print('np.array')
+    pass
 else:
+    print('else')
     Tsurf = np.linspace(Tsurf[0:-1], Tsurf[1:], int(86400/dt))
     Tsurf = Tsurf.flatten(order='F')
 
