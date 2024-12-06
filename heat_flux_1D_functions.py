@@ -1,8 +1,6 @@
 """ *** 1D heat conduction model ***
-Intended for use in snow and ice and with a
+Intended for use in snow and ice
 Calculates heat conduction and the amount of superimposed ice that forms
-
-This file contains a variety of functions that area called by heat_flux_1D.py
 
 Author: Horst Machguth horst.machguth@unifr.ch
         Andrew Tedstone andrew.tedstone@unil.ch
@@ -78,11 +76,38 @@ def scale_initial_profile_10m(y, t_profile, t_profile_10m, t_scale_10m):
     return T
 
 
+def calc_flux(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, 
+    iw, rho, Cp, bottom_boundary):
+    """
+    Run the heat flux calculations over the vertical domain for the provided timesteps.
 
-def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, rho, Cp):
+    :param t: np.array, timestamps
+    :param n:
+    :param T:
+    :param dTdt:
+    :param alpha:
+    :param dx: float, Desired layer thickness [m] 
+    :param Tsurf: float, (Surface) temperature at top boundary [degC]
+    :param dt: int, Timestep [s]
+    :param T_evol:
+    :param phi:
+    :param k: float, Thermal conductivity of ice or snow:
+    :param refreeze:
+    :param L:
+    :param iw: float, Irreducible water content [% of mass] ??
+    :param rho: float, Density of snow or ice [kg m-3]
+    :param Cp:
+    :param bottom_boundary: 'open' or 'closed'
+
+    :returns: (T_evol, phi, refreeze, iw)
+    
+    """
 
     for j in range(0, len(t)-1):
         T[0] = Tsurf[j]  # Update temperature top layer according to temperature evolution (if one is prescribed)
+        
+        if bottom_boundary == 'open':
+            T[-1] = T[-2]  # Update bottom temperature to equal the second-lowest grid cell
 
         dTdt[:] = alpha * (-(T[1:-1] - T[0:-2]) / dx ** 2 + (T[2:] - T[1:-1]) / dx ** 2)
 
@@ -96,26 +121,6 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
         refreeze[1, j] = phi[0, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at top of domain
 
     return T_evol, phi, refreeze, iw
-
-
-def calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, rho, Cp):
-
-    for j in range(0, len(t) - 1):
-        T[0] = Tsurf[j]  # Update temperature top layer according to temperature evolution (if one is prescribed)
-        T[-1] = T[-2]  # Update bottom temperature to equal the second-lowest grid cell
-
-        dTdt[:] = alpha * (-(T[1:-1] - T[0:-2]) / dx ** 2 + (T[2:] - T[1:-1]) / dx ** 2)
-
-        T[1:-1] = T[1:-1] + dTdt * dt
-        T_evol[:, j] = T
-        phi[:, j] = k * (T[:-1] - T[1:]) / dx
-        iw -= (-1) * phi[:-1, j] * dt / L * (phi[:-1, j] <= 0)  # *(phi[:-1, j] <= 0) otherwise iw created if phi > 0
-        iw *= iw > 0  # check there is no negative iw
-        alpha = alpha_update(k, rho, Cp, n, iw)
-        refreeze[0, j] = (-1) * phi[-1, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at bottom of domain
-        refreeze[1, j] = phi[0, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at top of domain
-
-    return T_evol, phi, refreeze
 
 
 def depth_intervals(D, dx, n=None):
@@ -207,12 +212,8 @@ def run_calculation(D, dx, dt, t, T0, rho, k, iwc, por, Tbottom, Tsurf, slushatb
     alpha = alpha_update(k, rho, Cp, n, iw)
     
     # calculation of temperature profile over time
-    if bottom_boundary == 'open':
-        T_evol, phi, refreeze = calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol,
-                                             phi, k, refreeze, L, iw, rho, Cp)
-    elif bottom_boundary == 'closed':
-        T_evol, phi, refreeze, iw = calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
-                                                   T_evol, phi, k, refreeze, L, iw, rho, Cp)
+    T_evol, phi, refreeze, iw = calc_flux(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol,
+                                             phi, k, refreeze, L, iw, rho, Cp, bottom_boundary)
     
     # cumulative sum of refrozen water
     refreeze_c = np.cumsum(refreeze, axis=1)
@@ -220,7 +221,6 @@ def run_calculation(D, dx, dt, t, T0, rho, k, iwc, por, Tbottom, Tsurf, slushatb
     refreeze_c /= por
     
     return (y, T_evol, refreeze, refreeze_c, phi)
-
 
 
 def temperatures_to_da(y, t, T_evol, save_path=None):
