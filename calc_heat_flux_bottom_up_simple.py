@@ -114,12 +114,6 @@ print('\nHeat flux at the top of the domain, end of model run: {:.3f}'.format(ph
 print('Heat flux at the bottom of the domain, end of model run: {:.3f}'.format(phi[-2, -2]) + ' W m-2')
 print('(downward flux is positive, upward flux negative)\n')
 
-save_to = '1D_heat_flux_{d}d_{dt}s_iwc{iwc}_depth{D}m_{direc}-SI.png'.format(d=days, dt=param_dt, iwc=param_iwc, D=slab_depth, direc=direc)
-save_to = os.path.join(output_dir, save_to)
-                         
-hf.plotting(T_evol, dt_plot, param_dt, y, slab_depth, param_slushatbottom, phi, days,
-                    t_final, t, refreeze_c, output_dir, 1, param_iwc, save_to)
-
 # refreezing.
 da_ro = hf.refreeze_to_da(t, refreeze, param_slushatbottom)
 
@@ -128,5 +122,51 @@ da_t = hf.temperatures_to_da(y, t, T_evol)
 
 
 # -
+### Regular plot                       
+fig = hf.plotting(T_evol, dt_plot, param_dt, y, slab_depth, param_slushatbottom, phi, days,
+                    t_final, t, refreeze_c, param_iwc)
+
+# +
+### Plot against observed values
+
+validation_dates = ['2022/07/06 14:15:00', '2022/09/04 16:00:00']
+
+measured_T = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
+
+# read the thermistor string data
+df_mt = pd.read_excel(measured_T)
+df_mt['dateUTC'] = pd.to_datetime(df_mt['DateTime (UTC)'], format='%m.%d.%Y %H:%M')
+df_mt.set_index('dateUTC', inplace=True)
+
+# establish list of depth values
+depths = df_mt.columns[5:].values  # columns that contain depth values
+for ni, i in enumerate(depths):
+    depths[ni] = float(i.split(' ')[0])
+
+# make sure depth axis is positive as depth axis of model is also positive
+# subtract height of top thermistor to adjust to positive depth below ice slab
+depths = depths * (-1) - top_thermistor_height
+
+# Xarray DataArray of all temperature measurements
+da = xr.DataArray(
+    data=df_mt[df_mt.columns[5:]].to_numpy(),
+    dims=['time', 'z'],
+    coords=dict(
+        z=depths,
+        time=df_mt.index.values
+    ),
+    attrs=dict(description="thermistor data FS2, Greenland Ice Sheet."),
+)
+
+
+save_to = '1D_heat_flux_{d}d_{dt}s_iwc{iwc}_depth{D}m_{direc}-SI_comp_meas.png'.format(d=days, dt=param_dt, iwc=param_iwc, D=slab_depth, direc=direc)
+save_to = os.path.join(output_dir, save_to)
+                         
+fig = hf.plotting_incl_measurements(T_evol, dt_plot, param_dt, y, slab_depth, param_slushatbottom, phi, days,
+                    t_final, t, refreeze_c, param_iwc, 
+                    da, validation_dates,
+                    save_to)
+# -
+
 
 
