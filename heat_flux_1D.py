@@ -52,7 +52,7 @@ compare_to_measurements = False
 
 # Use an initial Temperature profile as starting condition? If this option is chosen then
 # compare_to_measurements is set to False but an intial profile is still being read and used
-use_initial_T_profile = True
+use_initial_T_profile = False
 
 # The following four variables are only relevant if compare_to_measurements = True AND use_initial_T_profile = False
 measured_T = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\D6050043-logged_data(FS2)_v2.xlsx'
@@ -77,33 +77,33 @@ T10m_local = -12  # (°C) Temperature at 10 m depth at any given grid cell, acco
 # start and end date define the duration of the model run. The two variables are used also
 # when there is no comparison to measurements.
 start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
-end_date = '2022/12/31 23:30:00'
+end_date = '2022/07/31 23:30:00' # '2022/12/31 23:30:00'
 
-D = 12  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
-n = 300  # [] number of layers
-T0 = -10  # [°C]  initial temperature of all layers - ignored if compare_to_measurements or use_initial_T_profile
+D = 1  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
+n = 25  # [] number of layers
+T0 = 0  # [°C]  initial temperature of all layers - ignored if compare_to_measurements or use_initial_T_profile
 dx = D/n  # [m] layer thickness
 k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho 917 kg m-3 = 2.25
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
-rho = 900  # [kg m-3] Density of the snow or ice
-iwc = 0  # [% of mass] Irreducible water content in snow
+rho = 400  # [kg m-3] Density of the snow or ice
+iwc = 5  # [% of mass] Irreducible water content in snow
 por = 0.4  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
 dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # prescribed either for the top or the bottom of the model domain (not both). Bottom is default (slushatbottom = True),
 # if set to False, then slush and SI formation is assumed to happen at the top.
-slushatbottom = False
+slushatbottom = True
 # specify if the bottom boundary condition should be applied or not (if not, temperatures at the bottom can fluctuate
 # freely). If there is no bottom boundary condition, bottom heat flux will equal zero
-bottom_boundary = False
+bottom_boundary = True
 
 # -20  # [°C] boundary condition temperature top
 # can either be a scalar (e.g. -20 °C) or an array of length days + 1
 # Tsurf = np.linspace(-20, -0, days + 1)
 # Tsurf = 'sine'
-Tsurf = 0  # [°C] Top boundary condition
+Tsurf = -10  # [°C] Top boundary condition
 # bottom boundary condition, initial value of T-profile. Overwritten if compare_to_measurements or use_initial_T_profile
 Tbottom = 0  # [°C]
 
@@ -225,7 +225,7 @@ else:
 # calculation of temperature profile over time
 if bottom_boundary:
     T_evol, phi, refreeze, iw = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
-                                               T_evol, phi, k, refreeze, L, iw, rho, Cp)
+                                               T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp)
 else:
     T_evol, phi, refreeze = hf.calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol,
                                          phi, k, refreeze, L, iw, rho, Cp)

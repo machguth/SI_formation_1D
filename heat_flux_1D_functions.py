@@ -30,12 +30,22 @@ def irrw(iwc, n, dx, rho, T0):
     return iw, iwc
 
 
+# function to reset irreducible water content to iwc.
+# This function resets irreducible water content to the value iwc
+# for all layers that had a temperature below 0 °C the previous time step
+# and which have warmed to 0 °C in the current time step.
+# WILL NOT WORK AS HEAT FLUXES WILL BECOME INFINITISIMALLY SMALL BEFORE A LAYER EVER WILL WARM TO 0 °C
+# def reset_iw(iw, iwc, T_evol, T, rho, dx, j):
+#     r = np.where((T_evol[1:-1,j] == 0) & (T[1:-1] < 0))
+#     iw[r] = dx * 1000 * rho / 1000 * iwc / 100
+#     return iw
+
 def alpha_update(k, rho, Cp, n, iw):
     alpha = np.ones(n) * (k / (rho * Cp)) * (iw == 0)
     return alpha
 
 
-def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, rho, Cp):
+def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp):
 
     for j in range(0, len(t)-1):
         T[0] = Tsurf[j]  # Update temperature top layer according to temperature evolution (if one is prescribed)
@@ -46,6 +56,7 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
         T_evol[:, j] = T
         phi[:, j] = k * (T[:-1] - T[1:]) / dx
         iw -= (-1) * phi[:-1, j] * dt / L * (phi[:-1, j] <= 0)  # *(phi[:-1, j] <= 0) otherwise iw created if phi > 0
+        # iw = reset_iw(iw, iwc, T_evol, T, rho, dx, j)  # reset to the value of iwc if layer has just warmed to 0 °C
         iw *= iw > 0  # check there is no negative iw
         alpha = alpha_update(k, rho, Cp, n, iw)
         refreeze[0, j] = (-1) * phi[-1, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at bottom of domain
