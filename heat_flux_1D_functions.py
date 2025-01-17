@@ -29,7 +29,6 @@ def irrw(iwc, n, dx, rho, T0):
         iwc = 0
     return iw, iwc
 
-
 # function to reset irreducible water content to iwc.
 # This function resets irreducible water content to the value iwc
 # for all layers that had a temperature below 0 °C the previous time step
@@ -40,12 +39,21 @@ def irrw(iwc, n, dx, rho, T0):
 #     iw[r] = dx * 1000 * rho / 1000 * iwc / 100
 #     return iw
 
+def bucket_scheme(melt, iw, iwc, T_evol, rho, dx, j):
+    return iw, T_evol, rho
+
 def alpha_update(k, rho, Cp, n, iw):
     alpha = np.ones(n) * (k / (rho * Cp)) * (iw == 0)
     return alpha
 
+def rho_por_irrw_max(rho):  # calculate the maximum amount of irreducible water content per layer as function of rho
+    # use the equation of Coléou and Lesaffre (1998), Annals of Glaciology
+    ice_content = rho / 917
+    porosity = 1 - ice_content
+    irrw_max = 0.0057 / (1 - porosity) + 0.017  # max potential irreducible water content
+    return porosity, irrw_max
 
-def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp):
+def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt):
 
     for j in range(0, len(t)-1):
         T[0] = Tsurf[j]  # Update temperature top layer according to temperature evolution (if one is prescribed)
