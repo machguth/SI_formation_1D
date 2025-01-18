@@ -20,9 +20,16 @@ def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
     T_surf = Tmean + np.sin(x) * Tamplitude
     return T_surf
 
+# def irwc_old(iwc, n, dx, rho, T0):
+#     iw = np.ones(n) * dx * 1000 * rho / 1000 * iwc / 100
+#     if (T0 < 0) & (iwc > 0):
+#         print('\n *** Warning: irreducible water cont. > 0 for negative T0. Setting irred. water content to 0. *** \n')
+#         iw *= 0
+#         iwc = 0
+#     return iw, iwc
 
-def irrw(iwc, n, dx, rho, T0):
-    iw = np.ones(n) * dx * 1000 * rho / 1000 * iwc / 100
+def irwc(iwc, irwc_max, dx, n, T0):
+    iw = irwc_max * 1000 * dx
     if (T0 < 0) & (iwc > 0):
         print('\n *** Warning: irreducible water cont. > 0 for negative T0. Setting irred. water content to 0. *** \n')
         iw *= 0
@@ -33,29 +40,42 @@ def irrw(iwc, n, dx, rho, T0):
 # This function resets irreducible water content to the value iwc
 # for all layers that had a temperature below 0 °C the previous time step
 # and which have warmed to 0 °C in the current time step.
-# WILL NOT WORK AS HEAT FLUXES WILL BECOME INFINITISIMALLY SMALL BEFORE A LAYER EVER WILL WARM TO 0 °C
+# WILL NOT WORK AS HEAT FLUXES WILL BECOME INFINITESIMALLY SMALL BEFORE A LAYER EVER WILL WARM TO 0 °C
 # def reset_iw(iw, iwc, T_evol, T, rho, dx, j):
 #     r = np.where((T_evol[1:-1,j] == 0) & (T[1:-1] < 0))
 #     iw[r] = dx * 1000 * rho / 1000 * iwc / 100
 #     return iw
 
-def bucket_scheme(melt, iw, iwc, T_evol, rho, dx, j):
-    return iw, T_evol, rho
-
 def alpha_update(k, rho, Cp, n, iw):
     alpha = np.ones(n) * (k / (rho * Cp)) * (iw == 0)
     return alpha
 
-def rho_por_irrw_max(rho):  # calculate the maximum amount of irreducible water content per layer as function of rho
-    # use the equation of Coléou and Lesaffre (1998), Annals of Glaciology
-    ice_content = rho / 917
-    porosity = 1 - ice_content
-    irrw_max = 0.0057 / (1 - porosity) + 0.017  # max potential irreducible water content
-    return porosity, irrw_max
+def rho_por_irwc_max(rho, iwc):  # calculate the maximum amount of irreducible water content (IRWC) per layer
+    # as function of rho using a fixed percentage of irreducible water content, expressed in % of the pore volume
+    # Is based on Coléou and Lesaffre (1998), Annals of Glaciology, and Colbeck (1974), J. Glaciol.
+    # While the previous state that there is a weak dependency of IRWC expressed as % of pore volume
+    # (IRWC% = -0.0508porosity + 0.0947; own calculation based on the data in Coléou and Lesaffre, 1998), their data
+    # do cover only a limited range of densities and hence here a simple fixed percentage is used (Colbeck 1974).
+    porosity = 1 - rho / 917
+    irwc_max = porosity * (iwc / 100)  # max potential irreducible water content
+    # for rho > 873 kg m-3, no more pore space can be used. This addresses pore close-off density which is rather at
+    # 830 kg m-3, but instead using 873 kg m-3 bcs. of this value corresponding to infiltration ice density as
+    # measured by Machguth et al. (2016)
+    irwc_max *= porosity > (1 - 873 / 917)  # expressed as fraction of 1 (where 1 represents total volume of layer)
+    return porosity, irwc_max
+
+def bucket_scheme(melt, iw, irwc_max, T_evol, rho, dx, j):
+    # first calculate where more irwc can be added
+    irwc_available = irwc_max - (iw / 1000 / dx)
+    irwc_available *= (irwc_available > 0)  # to be sure available IRWC is not below zero
+
+    bottom_water = 0
+    return iw, T_evol, rho, bottom_water
 
 def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt):
 
     for j in range(0, len(t)-1):
+        porosity, irwc_max = rho_por_irwc_max(rho, iwc)
         T[0] = Tsurf[j]  # Update temperature top layer according to temperature evolution (if one is prescribed)
 
         dTdt[:] = alpha * (-(T[1:-1] - T[0:-2]) / dx ** 2 + (T[2:] - T[1:-1]) / dx ** 2)
@@ -64,8 +84,10 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
         T_evol[:, j] = T
         phi[:, j] = k * (T[:-1] - T[1:]) / dx
         iw -= (-1) * phi[:-1, j] * dt / L * (phi[:-1, j] <= 0)  # *(phi[:-1, j] <= 0) otherwise iw created if phi > 0
-        # iw = reset_iw(iw, iwc, T_evol, T, rho, dx, j)  # reset to the value of iwc if layer has just warmed to 0 °C
         iw *= iw > 0  # check there is no negative iw
+        # calculate percolation as per bucket scheme
+        iw, T_evol, rho, bottom_water = bucket_scheme(melt, iw, irwc_max, T_evol, rho, dx, j)
+
         alpha = alpha_update(k, rho, Cp, n, iw)
         refreeze[0, j] = (-1) * phi[-1, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at bottom of domain
         refreeze[1, j] = phi[0, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at top of domain

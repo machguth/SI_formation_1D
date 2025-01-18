@@ -87,7 +87,7 @@ k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 =
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
 rho = 400  # [kg m-3] Density of the snow or ice - can be a skalar or a density profile of depth D with n elements
-iwc = 5  # [% of mass] Irreducible water content in snow
+iwc = 7  # [% of pore volume] Irreducible water content in snow
 por = 0.4  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
 dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
 
@@ -107,10 +107,10 @@ Tsurf = -10  # [°C] Top boundary condition
 # bottom boundary condition, initial value of T-profile. Overwritten if compare_to_measurements or use_initial_T_profile
 Tbottom = 0  # [°C]
 
-melt = 0  # Surface melt [mm per time step] can be a skalar or an array of length equal number of time steps
+melt = 0  # Surface melt [mm per time step] can be a scalar or an array of length equal number of time steps
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
 # output_dir = r'O:\test_1D_heat_conduction'
 
 # ============================================== Preparations ===================================================
@@ -215,9 +215,12 @@ else:
     # here needs to be a function to read a density profile from a table and maybe to interpolate to the n layers
     pass
 
+# Calculate initial porosity and irreducible water content
+porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
+
 # Water per layer (irreducible water content) [mm w.e. m-2 or kg m-2]
 # This function also sets irreducible water content to 0 for all layers that have initial T < 0
-iw, iwc = hf.irrw(iwc, n, dx, rho, T0)
+iw, iwc = hf.irwc(iwc, irwc_max, dx, n, T0)
 
 # Vector of thermal diffusivity [m2 s-1]
 alpha = hf.alpha_update(k, rho, Cp, n, iw)
