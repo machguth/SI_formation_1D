@@ -28,7 +28,7 @@ def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
 #         iwc = 0
 #     return iw, iwc
 
-def irwc(iwc, irwc_max, dx, n, T0):
+def irwc_init(iwc, irwc_max, dx, n, T0):
     iw = irwc_max * 1000 * dx
     if (T0 < 0) & (iwc > 0):
         print('\n *** Warning: irreducible water cont. > 0 for negative T0. Setting irred. water content to 0. *** \n')
@@ -66,10 +66,13 @@ def rho_por_irwc_max(rho, iwc):  # calculate the maximum amount of irreducible w
 
 def bucket_scheme(melt, iw, irwc_max, T_evol, rho, dx, j):
     # first calculate where more irwc can be added
-    irwc_available = irwc_max - (iw / 1000 / dx)
-    irwc_available *= (irwc_available > 0)  # to be sure available IRWC is not below zero
+    irwc_available = irwc_max - (iw / 1000 / dx)  # unit fraction of 1 (1 being total thickness of a layer)
+    irwc_available *= (irwc_available > 0)  # to be sure available IRWC is nowhere below zero
+    irwc_cs = np.cumsum(irwc_available) - melt
 
-    bottom_water = 0
+
+
+    bottom_water = irwc_cs[-1] * (irwc_cs[-1] > 0)
     return iw, T_evol, rho, bottom_water
 
 def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt):

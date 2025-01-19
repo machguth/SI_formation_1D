@@ -107,7 +107,7 @@ Tsurf = -10  # [°C] Top boundary condition
 # bottom boundary condition, initial value of T-profile. Overwritten if compare_to_measurements or use_initial_T_profile
 Tbottom = 0  # [°C]
 
-melt = 0  # Surface melt [mm per time step] can be a scalar or an array of length equal number of time steps
+melt = 0  # Surface melt [mm w.e. per time step] can be a scalar or an array of length equal number of time steps
 
 # output_dir = r'C:\horst\modeling\lateralflow'
 output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
@@ -218,9 +218,9 @@ else:
 # Calculate initial porosity and irreducible water content
 porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
 
-# Water per layer (irreducible water content) [mm w.e. m-2 or kg m-2]
+# Initialize water per layer (irreducible water content) [mm w.e. m-2 or kg m-2]
 # This function also sets irreducible water content to 0 for all layers that have initial T < 0
-iw, iwc = hf.irwc(iwc, irwc_max, dx, n, T0)
+iw, iwc = hf.irwc_init(iwc, irwc_max, dx, n, T0)
 
 # Vector of thermal diffusivity [m2 s-1]
 alpha = hf.alpha_update(k, rho, Cp, n, iw)
