@@ -81,7 +81,7 @@ end_date = '2022/07/31 23:30:00' # '2022/12/31 23:30:00'
 
 D = 1  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
 n = 25  # [] number of layers
-T0 = 0  # [°C]  initial temperature of all layers - ignored if compare_to_measurements or use_initial_T_profile
+T0 = -5  # [°C]  initial temperature of all layers - ignored if compare_to_measurements or use_initial_T_profile
 dx = D/n  # [m] layer thickness
 k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho 917 kg m-3 = 2.25
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
@@ -103,11 +103,17 @@ bottom_boundary = True
 # can either be a scalar (e.g. -20 °C) or an array of length days + 1
 # Tsurf = np.linspace(-20, -0, days + 1)
 # Tsurf = 'sine'
-Tsurf = -10  # [°C] Top boundary condition
+Tsurf = 0  # [°C] Top boundary condition
 # bottom boundary condition, initial value of T-profile. Overwritten if compare_to_measurements or use_initial_T_profile
 Tbottom = 0  # [°C]
 
-melt = 0  # Surface melt [mm w.e. per time step] can be a scalar or an array of length equal number of time steps
+melt = 7.72e-07  # Surface melt [mm w.e. per time step] can be a scalar or an array of length equal number of time steps
+
+# parameters used to calculate k based on Calonne et al. (2019)
+a = 0.02  # [m^3/kg]
+rho_tr = 450  # [kg m^-3]
+k_ref_i = 2.107  # [W m^-1 k^-1]
+k_ref_a = 0.024  # [W m^-1 k^-1]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
 output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
@@ -220,7 +226,11 @@ porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
 
 # Initialize water per layer (irreducible water content) [mm w.e. m-2 or kg m-2]
 # This function also sets irreducible water content to 0 for all layers that have initial T < 0
-iw, iwc = hf.irwc_init(iwc, irwc_max, dx, n, T0)
+# In contrast to previous version, the variable iwc is not changed as it now constitutes the maximum potential IRWC
+iw = hf.irwc_init(iwc, irwc_max, dx, n, T0)
+
+# Initial array of thermal conductivity
+k = hf.k_update(T_evol[1:-1, 0], rho, a, rho_tr, k_ref_i, k_ref_a)
 
 # Vector of thermal diffusivity [m2 s-1]
 alpha = hf.alpha_update(k, rho, Cp, n, iw)
@@ -244,7 +254,8 @@ else:
 # calculation of temperature profile over time
 if bottom_boundary:
     T_evol, phi, refreeze, iw = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
-                                               T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt)
+                                               T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt,
+                                               a, rho_tr, k_ref_i, k_ref_a)
 else:
     T_evol, phi, refreeze = hf.calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol,
                                          phi, k, refreeze, L, iw, rho, Cp)
