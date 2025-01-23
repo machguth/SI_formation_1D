@@ -116,7 +116,7 @@ k_ref_i = 2.107  # [W m^-1 k^-1]
 k_ref_a = 0.024  # [W m^-1 k^-1]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
 # output_dir = r'O:\test_1D_heat_conduction'
 
 # ============================================== Preparations ===================================================

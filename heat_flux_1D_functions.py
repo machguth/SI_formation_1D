@@ -90,7 +90,7 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_evol, rho, dx, j):
 
     # calculate the amount of refreezing
     Lh_release_layer = irwc_existing * 1000 * dx * L
-    heat_capacity_layer = 1 * rho * dx * T_evol * Cp  # 1 to represent the full layer
+    heat_capacity_layer = 1 * rho * dx * T_evol * Cp * (-1)  # 1 to represent the full layer, -1 bcs. T_evol negative
     # make sure layer is not warmed beyond 0 °C (in case Lh_release_layer > heat_capacity_layer)
     Lh_release = Lh_release_layer * (Lh_release_layer < heat_capacity_layer) + \
                  (Lh_release_layer - heat_capacity_layer) * (Lh_release_layer > heat_capacity_layer)
