@@ -11,6 +11,13 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
+def C_to_K(T):
+    T += 273.15
+    return T
+
+def K_to_C(T):
+    T -= 273.15
+    return T
 
 def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
     if days/365 != years:
@@ -41,10 +48,10 @@ def alpha_update(k, rho, Cp, n, iw):
     return alpha
 
 # Calculate thermal conductivity of snow to ice based on Calonne et al. (2019), GRL
-def k_update(T_evol, rho, a, rho_tr, k_ref_i, k_ref_a):
-    T_evol += 273.15  # convert to K
-    k_air = 1.5207E-11 * T_evol**3 - 4.8574E-08 * T_evol**2 + 1.0184E-04 * T_evol - 3.9333E-04
-    k_ice = 9.828 * np.exp(-5.7 * 10**(-3) * T_evol)  # Based on Cuffex and Paterson (2010)
+def k_update(T, rho, a, rho_tr, k_ref_i, k_ref_a):
+
+    k_air = 1.5207E-11 * T**3 - 4.8574E-08 * T**2 + 1.0184E-04 * T - 3.9333E-04
+    k_ice = 9.828 * np.exp(-5.7 * 10**(-3) * T)  # Based on Cuffex and Paterson (2010)
 
     k_ref_firn = 2.107 + 0.003618 * (rho - 917)
     k_ref_snow = 0.024 - 1.23 * 10**(-4) * rho + 2.5 * 10**(-6) * rho**2
@@ -70,7 +77,8 @@ def rho_por_irwc_max(rho, iwc):  # calculate the maximum amount of irreducible w
     irwc_max *= porosity > (1 - 873 / 917)  # irwc_max as fraction of 1 (where 1 represents total volume of layer)
     return porosity, irwc_max
 
-def bucket_scheme(L, Cp, melt, iw, irwc_max, T_evol, rho, dx, j):
+def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
+
     # first calculate where irwc can be added
     irwc_existing = iw / 1000 / dx
     irwc_available = irwc_max - irwc_existing  # unit fraction of 1 (1 being total thickness dx of a layer)
@@ -90,14 +98,14 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_evol, rho, dx, j):
 
     # calculate the amount of refreezing
     Lh_release_layer = irwc_existing * 1000 * dx * L
-    heat_capacity_layer = 1 * rho * dx * T_evol * Cp * (-1)  # 1 to represent the full layer, -1 bcs. T_evol negative
+    heat_capacity_layer = 1 * rho * dx * T_in * Cp * (-1)  # 1 to represent the full layer, -1 bcs. T_in negative
     # make sure layer is not warmed beyond 0 °C (in case Lh_release_layer > heat_capacity_layer)
     Lh_release = Lh_release_layer * (Lh_release_layer < heat_capacity_layer) + \
                  (Lh_release_layer - heat_capacity_layer) * (Lh_release_layer > heat_capacity_layer)
     refreezing = Lh_release / (1000 * dx * L)
 
-    # calculate warming from latent heat release and adjust T_evol
-    T_evol += Lh_release / (rho * dx * Cp)
+    # calculate warming from latent heat release and adjust T_in
+    T_out = T_in + Lh_release / (rho * dx * Cp)
 
     # calculate new IRWC after refreezing took place
     iw = irwc_existing - refreezing
@@ -106,7 +114,7 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_evol, rho, dx, j):
     # pay attention that the refrozen water becomes ice and its volume grows by rho_water / rho_ice
     rho += 917 * refreezing * (1000 / 917)
 
-    return iw, T_evol, rho, bottom_water
+    return iw, T_out, rho, bottom_water
 
 def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt,
                 a, rho_tr, k_ref_i, k_ref_a):
@@ -120,7 +128,6 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
         dTdt[:] = alpha * (-(T[1:-1] - T[0:-2]) / dx ** 2 + (T[2:] - T[1:-1]) / dx ** 2)
 
         T[1:-1] = T[1:-1] + dTdt * dt
-        T_evol[:, j] = T
 
         # To calculate heat transfer to the water layer at the bottom (not through the water),
         # an n+1 value of thermal conductivity is needed. For the moment, simply duplicate the lowermost k value
@@ -136,11 +143,14 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
 
         # calculate percolation as per bucket scheme
         # also update T_evol for warming from latent heat release where water percolates into layers with T_evol < 0 °C
-        iw, T_evol[1:-1, j], rho, bottom_water = bucket_scheme(L, Cp, melt, iw, irwc_max, T_evol[1:-1, j], rho, dx, j)
+        iw, T[1:-1], rho, bottom_water = bucket_scheme(L, Cp, melt, iw, irwc_max, T[1:-1], rho, dx, j)
 
         # update k and alpha for the next iteration
-        k = k_update(T_evol[1:-1, 0], rho, a, rho_tr, k_ref_i, k_ref_a)
+        k = k_update(T[1:-1], rho, a, rho_tr, k_ref_i, k_ref_a)
         alpha = alpha_update(k, rho, Cp, n, iw)
+
+        # finally record temperature profile for later establishing figures and writing output table
+        T_evol[:, j] = T
 
     return T_evol, phi, refreeze, iw
 

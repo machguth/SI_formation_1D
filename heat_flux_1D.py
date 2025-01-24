@@ -77,10 +77,10 @@ T10m_local = -12  # (°C) Temperature at 10 m depth at any given grid cell, acco
 # start and end date define the duration of the model run. The two variables are used also
 # when there is no comparison to measurements.
 start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
-end_date = '2022/07/31 23:30:00' # '2022/12/31 23:30:00'
+end_date = '2022/08/31 23:30:00' # '2022/12/31 23:30:00'
 
 D = 1  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
-n = 25  # [] number of layers
+n = 20  # [] number of layers
 T0 = -5  # [°C]  initial temperature of all layers - ignored if compare_to_measurements or use_initial_T_profile
 dx = D/n  # [m] layer thickness
 k = 2.25  # [W m-1 K-1] Thermal conductivity of ice or snow: at rho 400 kg m-3 = 0.5; at rho 917 kg m-3 = 2.25
@@ -89,7 +89,7 @@ L = 334000  # [J kg-1] Latent heat of water
 rho = 400  # [kg m-3] Density of the snow or ice - can be a skalar or a density profile of depth D with n elements
 iwc = 7  # [% of pore volume] Irreducible water content in snow
 por = 0.4  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
-dt = 150  # [s] numerical time step, needs to be a fraction of 86400 s
+dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # prescribed either for the top or the bottom of the model domain (not both). Bottom is default (slushatbottom = True),
@@ -107,7 +107,7 @@ Tsurf = 0  # [°C] Top boundary condition
 # bottom boundary condition, initial value of T-profile. Overwritten if compare_to_measurements or use_initial_T_profile
 Tbottom = 0  # [°C]
 
-melt = 7.72e-07  # Surface melt [mm w.e. per time step] can be a scalar or an array of length equal number of time steps
+melt = 7.72e-07 * 50 # Surface melt [mm w.e. per time step] can be a scalar or an array of length equal number of time steps
 
 # parameters used to calculate k based on Calonne et al. (2019)
 a = 0.02  # [m^3/kg]
@@ -128,6 +128,7 @@ if not isdir:
 # make sure that use_initial_T_profile = True is only used with compare_to_measurements = False
 if use_initial_T_profile:
     compare_to_measurements = False
+
 
 y = np.linspace(-dx/2, D+dx/2, n+2)  # vector of central points of each depth interval (=layer)
 t = np.arange(pd.to_datetime(start_date), pd.to_datetime(end_date), np.timedelta64(dt, 's'))  # vector of time steps
@@ -230,7 +231,7 @@ porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
 iw = hf.irwc_init(iwc, irwc_max, dx, n, T0)
 
 # Initial array of thermal conductivity
-k = hf.k_update(T_evol[1:-1, 0], rho, a, rho_tr, k_ref_i, k_ref_a)
+k = hf.k_update(hf.C_to_K(T_evol[1:-1, 0]), rho, a, rho_tr, k_ref_i, k_ref_a)
 
 # Vector of thermal diffusivity [m2 s-1]
 alpha = hf.alpha_update(k, rho, Cp, n, iw)
