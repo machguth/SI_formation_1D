@@ -107,7 +107,8 @@ Tsurf = 0  # [°C] Top boundary condition
 # bottom boundary condition, initial value of T-profile. Overwritten if compare_to_measurements or use_initial_T_profile
 Tbottom = 0  # [°C]
 
-melt = 7.72e-07 * 50 # Surface melt [mm w.e. per time step] can be a scalar or an array of length equal number of time steps
+# Surface melt can be a scalar or an array of length equal number of time steps
+melt = 6.95e-05  # [m w.e. per time step] (at 300 s time steps, 6.95e-05 corresponds to ~20 mm w.e. melt per day)
 
 # parameters used to calculate k based on Calonne et al. (2019)
 a = 0.02  # [m^3/kg]
@@ -116,7 +117,7 @@ k_ref_i = 2.107  # [W m^-1 k^-1]
 k_ref_a = 0.024  # [W m^-1 k^-1]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
 # output_dir = r'O:\test_1D_heat_conduction'
 
 # ============================================== Preparations ===================================================

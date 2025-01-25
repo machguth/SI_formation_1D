@@ -79,40 +79,43 @@ def rho_por_irwc_max(rho, iwc):  # calculate the maximum amount of irreducible w
 
 def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
 
-    # first calculate where irwc can be added
+    # convert iw to unit fraction of 1 (1 being total thickness dx of a layer)
     irwc_existing = iw / 1000 / dx
-    irwc_available = irwc_max - irwc_existing  # unit fraction of 1 (1 being total thickness dx of a layer)
+
+    # calculate where irwc can be added
+    irwc_available = irwc_max - irwc_existing  # [unit fraction of 1 (1 being total thickness dx of a layer)]
     irwc_available *= (irwc_available > 0)  # to be sure available IRWC is nowhere below zero
 
-    melt_f = melt / dx  # convert melt to a fraction of dx
+    melt_f = melt[j] / dx  # convert melt to a fraction of dx
 
     # calculate irreducible water distribution in all layers without a loop
     irwc_cs = np.cumsum(irwc_available)
-    irwc_cs_m = irwc_cs - melt_f[j]
+    irwc_cs_m = irwc_cs - melt_f
     irwc_cs_m_pos = irwc_cs_m * (irwc_cs_m > 0)
     irwc_added = irwc_available - irwc_cs_m_pos
     irwc_added = irwc_added * (irwc_added > 0)
     irwc_existing = irwc_added + irwc_existing
-    bottom_water = np.sum(irwc_added) - melt_f[j]
+    bottom_water = np.sum(irwc_added) - melt_f
     bottom_water *= (bottom_water > 0)
 
     # calculate the amount of refreezing
-    Lh_release_layer = irwc_existing * 1000 * dx * L
+    pot_Lh_rel_layer = irwc_existing * 1000 * dx * L
     heat_capacity_layer = 1 * rho * dx * T_in * Cp * (-1)  # 1 to represent the full layer, -1 bcs. T_in negative
-    # make sure layer is not warmed beyond 0 °C (in case Lh_release_layer > heat_capacity_layer)
-    Lh_release = Lh_release_layer * (Lh_release_layer < heat_capacity_layer) + \
-                 heat_capacity_layer * (Lh_release_layer > heat_capacity_layer)
+    # make sure layer is not warmed beyond 0 °C (in case pot_Lh_rel_layer > heat_capacity_layer)
+    Lh_release = pot_Lh_rel_layer * (pot_Lh_rel_layer < heat_capacity_layer) + \
+                 heat_capacity_layer * (pot_Lh_rel_layer > heat_capacity_layer)
     refreezing = Lh_release / (1000 * dx * L)
 
     # calculate warming from latent heat release and adjust T_in
     T_out = T_in + Lh_release / (rho * dx * Cp)
 
-    # calculate new IRWC after refreezing took place
-    iw = irwc_existing - refreezing
-
     # calculate new rho after refreezing took place
     # pay attention that the refrozen water becomes ice and its volume grows by rho_water / rho_ice
     rho += 917 * refreezing * (1000 / 917)
+
+    # calculate new IRWC after refreezing took place  and convert back to [kg water per layer]
+    iw = irwc_existing - refreezing
+    iw *= 1000 * dx
 
     return iw, T_out, rho, bottom_water
 
@@ -123,8 +126,14 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
         # calculation is for n + 2 layers. The n layers all have a thickness of D/n. The additional two layers are
         # the skin layer on top and the water saturated layer at the bottom
         porosity, irwc_max = rho_por_irwc_max(rho, iwc)
-        T[0] = Tsurf[j]  # Update temperature top layer according to temperature evolution (if one is prescribed)
 
+        # Update temperature top layer according to surface temperature time series (if one is prescribed)
+        T[0] = Tsurf[j]
+
+        # calculate temperature change for all layers.
+        # alpha is zero for all layers that contain water (and must be at 0 °C), hence they cannot be cooled down
+        # by conduction. Before a layer can cool to below 0 °C, all pore water in the layer needs to refreeze first.
+        # Refreezing is calculated below.
         dTdt[:] = alpha * (-(T[1:-1] - T[0:-2]) / dx ** 2 + (T[2:] - T[1:-1]) / dx ** 2)
 
         T[1:-1] = T[1:-1] + dTdt * dt
