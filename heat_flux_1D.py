@@ -36,6 +36,7 @@ import pandas as pd
 import xarray as xr
 
 import heat_flux_1D_functions as hf
+import heat_flux_1D_plotting as hp
 import datetime
 from scipy import interpolate
 import os
@@ -77,7 +78,7 @@ T10m_local = -12  # (°C) Temperature at 10 m depth at any given grid cell, acco
 # start and end date define the duration of the model run. The two variables are used also
 # when there is no comparison to measurements.
 start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
-end_date = '2022/08/31 23:30:00' # '2022/12/31 23:30:00'
+end_date = '2022/07/31 23:30:00' # '2022/12/31 23:30:00'
 
 D = 1  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
 n = 20  # [] number of layers
@@ -117,8 +118,8 @@ k_ref_i = 2.107  # [W m^-1 k^-1]
 k_ref_a = 0.024  # [W m^-1 k^-1]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
-# output_dir = r'O:\test_1D_heat_conduction'
+# output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+output_dir = r'O:\test_1D_heat_conduction'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create
@@ -276,10 +277,10 @@ print('runtime', time_end_calc - time_start)
 
 # plotting
 if compare_to_measurements:
-    hf.plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
+    hp.plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
                                   t_final, t, refreeze_c, output_dir, iwc, da, m, validation_dates)
 else:
-    hf.plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
+    hp.plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
                 t_final, t, refreeze_c, output_dir, m, iwc)
 
 # write output
