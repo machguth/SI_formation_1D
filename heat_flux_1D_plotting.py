@@ -85,7 +85,7 @@ def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
 def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
                                t_final, t, refreeze_c, output_dir, iwc, da, m, validation_dates):
 
-    colors_validation = ['tab:red', 'tab:cyan', 'tab:purple', 'tab:orange', 'tab_pink']
+    colors_validation = ['tab:red', 'tab:cyan', 'tab:purple', 'tab:orange', 'tab:pink']
     plt.rcParams.update({'font.size': 28})
     fig, ax = plt.subplots(2, figsize=(24, 20), gridspec_kw={'height_ratios': [3, 1]})
     t_sel = np.arange(0, len(T_evol[0, :]), dt_plot/dt)
@@ -155,3 +155,26 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
         plt.savefig(os.path.join(output_dir, 'test_1D_heat_flux_' + str(int(days)) + 'd_'
                                  + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas_' +
                                  'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
+
+
+def test_T_plotting(T_evol, t, melt, days, iwc, dt, n, dx, output_dir):
+
+    colors = plt.cm.brg(np.linspace(0, 1, n))
+    layer_depths = np.arange(n) * dx + dx
+
+    fig, ax = plt.subplots(1, figsize=(24, 20))
+
+    for nvd, vd in enumerate(layer_depths):
+        ax.plot(t, T_evol[1 + nvd,:],
+                   color=colors[nvd], lw=1, ls='--', label='{:.2f}'.format(layer_depths[nvd]))
+
+    # ax.plot(t, T_evol[20,:], label='1 m depth')
+    ax.plot(t, T_evol[0,:], label='Surface', color='gray')
+
+    ax.set_xlabel('Time')
+    ax.set_ylabel('T (°C)')
+
+    fig.legend()
+
+    plt.savefig(os.path.join(output_dir, 'test_T-plot_' + str(int(days)) + 'd_'
+                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))

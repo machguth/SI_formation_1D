@@ -45,29 +45,29 @@ time_start = datetime.datetime.now()
 # start and end date define the duration of the model run. The two variables are used also
 # when there is no comparison to measurements.
 start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
-end_date = '2022/07/31 23:30:00' # '2022/12/31 23:30:00'
+end_date = '2022/08/31 23:30:00' # '2022/12/31 23:30:00'
 
-D = 1  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
-n = 20  # [] number of layers
+D = 0.5  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
+n = 10  # [] number of layers
 T0 = -5  # [°C]  initial temperature of all layers - ignored if compare_to_measurements or use_initial_T_profile
 dx = D/n  # [m] layer thickness
 # Thermal conductivity of ice or snow [W m-1 K-1]: now function of rho and T, following Calonne et al. (2019)
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
 rho = 400  # [kg m-3] Initial density of the snow or ice - can be scalar or density profile of depth D with n elements
-iwc = 7  # [% of pore volume] Max. possible irreducible water content in snow
+iwc = 3  # [% of pore volume] Max. possible irreducible water content in snow
 por = 0.4  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
 dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # currently assumed that there is always slush at the bottom
 
-Tsurf = 0  # [°C] Top boundary condition
+Tsurf = 'test'  # 0  # [°C] Top boundary condition
 # bottom boundary condition.
 Tbottom = 0  # [°C]
 
 # Surface melt can be a scalar or an array of length equal number of time steps
-melt = 6.95e-05  # [m w.e. per time step] (at 300 s time steps, 6.95e-05 corresponds to ~20 mm w.e. melt per day)
+melt = 'test'  # 6.95e-05  # [m w.e. per time step] (at 300 s time steps, 6.95e-05 corresponds to ~20 mm w.e. melt per day)
 
 # parameters used to calculate k based on Calonne et al. (2019)
 a = 0.02  # [m^3/kg]
@@ -126,7 +126,8 @@ if isinstance(Tsurf, int):
     Tsurf = np.ones(len(t)) * Tsurf
 elif isinstance(Tsurf, str):
     # read a file, maybe interpolate temporally
-    pass
+    if Tsurf == 'test':
+        Tsurf = hf.create_test_data(0, -10, 2000, 5)
 else:
     pass
     # Tsurf = np.linspace(Tsurf[0:-1], Tsurf[1:], int(86400/dt))
@@ -135,9 +136,9 @@ else:
 # create the array of melt (one entry per time step)
 if isinstance(melt, int) or isinstance(melt, float):
     melt = np.ones(len(t)) * melt
-else:
-    # here needs to be function reading melt from a table and maybe to interpolate to the t time steps
-    pass
+elif isinstance(melt, str):
+    if melt == 'test':
+        melt = hf.create_test_data(6.95e-05, 0, 2000, 5)
 
 # calculation of temperature profile over time
 T_evol, phi, refreeze, iw = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
@@ -159,6 +160,8 @@ print('runtime', time_end_calc - time_start)
 # plotting
 hp.plotting(T_evol, dt_plot, dt, y, D, True, phi, days,
             t_final, t, refreeze_c, output_dir, 1, iwc)
+
+hp.test_T_plotting(T_evol, t, melt, days, iwc, dt, n, dx, output_dir)
 
 # write output
 # Xarray DataArray of all simulated temperatures

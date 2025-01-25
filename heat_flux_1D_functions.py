@@ -9,6 +9,12 @@ This file contains a variety of functions that area called by heat_flux_1D.py
 import numpy as np
 import sys
 
+def create_test_data(val1, val2, length, rep):
+    a = np.zeros(length) + val1
+    b = np.zeros(length) + val2
+    c = np.append(a, b)
+    test_data = np.tile(c, rep)
+    return test_data
 
 def C_to_K(T):
     T += 273.15
