@@ -158,7 +158,8 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
                                  'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
 
 
-def test_T_plotting(T_evol, phi, refreeze_c, rho_evol, t, melt, days, iwc, dt, n, dx, output_dir):
+def test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, bw_evol,
+                    t, melt, days, iwc, dt, n, dx, output_dir):
 
     colors = plt.cm.brg(np.linspace(0, 1, n))
     layer_depths = np.arange(n) * dx + dx
@@ -174,15 +175,15 @@ def test_T_plotting(T_evol, phi, refreeze_c, rho_evol, t, melt, days, iwc, dt, n
                    color=colors[nvd], lw=1, label='{:.2f}'.format(layer_depths[nvd]))  # ls='--',
 
     ax[0].plot(t[:-1], T_evol[0,:-1], label='$T_{surface}$', color='gray', lw=2)
-    ax[0].set_title('Snow temperature at various depths')
-    ax[0].set_ylabel('T (°C)')
+    ax[0].set_title('Snow temperature $T$ at various depths')
+    ax[0].set_ylabel('$T$ (°C)')
 
     ax[1].plot(t[:-1], phi[-1, :-1], color='Tab:blue')
     ax[1].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
     ax[1].set_ylabel('$\\phi$ (W m$^{-2}$)', color='Tab:blue')
-    ax[1].set_title('Heat flux $\\phi$ and superimposed ice formation at snow-slush interface')
+    ax[1].set_title('Heat flux $\\phi$ and superimposed ice formation $SIF$ at snow-slush interface')
     ax2 = ax[1].twinx()
-    ax2.set_ylabel('S-imposed ice (mm)', color='Tab:orange')
+    ax2.set_ylabel('SIF (mm ice)', color='Tab:orange')
     ax2.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
     ax2.plot(t[:-1], refreeze_c[0, :-1], color='Tab:orange')
 
@@ -191,10 +192,16 @@ def test_T_plotting(T_evol, phi, refreeze_c, rho_evol, t, melt, days, iwc, dt, n
     ax[2].set_ylabel('$\\rho$ (kg m$^{-3}$)')
     ax[2].set_title('Snow density $\\rho$ over time and depth')
 
+    for nvd, vd in enumerate(layer_depths):
+        ax[3].plot(t[:-1], iw_evol[nvd, :-1], color=colors[nvd], lw=1)
     ax[3].tick_params('x', rotation=45)
-    ax[3].set_xlabel('Time')
-    ax[2].set_ylabel('$IRWC$ (kg m$^{-3}$)')
-    ax[3].set_title('Irreducible water content $IRWC$ over time and depth')
+    ax[3].set_xlabel('Date')
+    ax[3].set_ylabel('$W_l$ (kg m$^{-3}$)')
+    ax[3].set_title('Water content $W_l$ and bottom water $W_b$ over time and depth')
+    ax3 = ax[3].twinx()
+    ax3.set_ylabel('$W_b$ (mm)', color='Tab:orange')
+    ax3.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
+    ax3.plot(t[:-1], bw_evol[:-1], color='Tab:orange')
 
     ax[0].legend(bbox_to_anchor=(1.2, 1.0))
     fig.tight_layout()

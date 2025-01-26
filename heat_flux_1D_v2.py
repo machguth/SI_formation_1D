@@ -28,6 +28,7 @@
     to snow density by the moment the snowpack cools down. Irreducible water gets modified in hf.bucket_scheme()
     and in hf.calc_closed(). Check whether both are needed, that they do not conflict and if both needed, that
     both modify the density.
+    todo: bottom water does not yet work properly
 
 
 """
@@ -164,6 +165,9 @@ refreeze_c = np.cumsum(refreeze, axis=1)
 # and correct for the fact that water occupies only the pore space
 refreeze_c /= por
 
+# cumulative sum of bottom water
+bw_evol = np.cumsum(bw_evol)
+
 print('\nHeat flux at the top of the domain, end of model run: {:.3f}'.format(phi[0, -2]) + ' W m-2')
 print('Heat flux at the bottom of the domain, end of model run: {:.3f}'.format(phi[-2, -2]) + ' W m-2')
 print('(downward flux is positive, upward flux negative)\n')
@@ -175,7 +179,7 @@ print('runtime', time_end_calc - time_start)
 hp.plotting(T_evol, dt_plot, dt, y, D, True, phi, days,
             t_final, t, refreeze_c, output_dir, 1, iwc)
 
-hp.test_T_plotting(T_evol, phi, refreeze_c, rho_evol, t, melt, days, iwc, dt, n, dx, output_dir)
+hp.test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, bw_evol, t, melt, days, iwc, dt, n, dx, output_dir)
 
 # write output
 # Xarray DataArray of all simulated temperatures

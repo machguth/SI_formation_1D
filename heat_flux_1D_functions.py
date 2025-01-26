@@ -99,7 +99,7 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
     irwc_added = irwc_available - irwc_cs_m_pos
     irwc_added = irwc_added * (irwc_added > 0)
     irwc_existing = irwc_added + irwc_existing
-    bottom_water = np.sum(irwc_added) - melt_f
+    bottom_water = melt_f - np.sum(irwc_added)
     bottom_water *= (bottom_water > 0)
 
     # calculate the amount of refreezing
@@ -117,7 +117,7 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
     # pay attention that the refrozen water becomes ice and its volume grows by rho_water / rho_ice
     rho += 917 * refreezing * (1000 / 917)
 
-    # calculate new IRWC after refreezing took place  and convert back to [kg water per layer]
+    # calculate new IRWC after refreezing took place and convert back to [kg water per layer]
     iw = irwc_existing - refreezing
     iw *= 1000 * dx
 
@@ -166,6 +166,8 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
         # finally record temperature profile for later establishing figures and writing output table
         T_evol[:, j] = T
         rho_evol[:, j] = rho
+        iw_evol[:, j] = iw / dx  # convert to kg m^-3
+        bw_evol[j] = bottom_water
 
     return T_evol, phi, refreeze, iw_evol, rho_evol, bw_evol
 
