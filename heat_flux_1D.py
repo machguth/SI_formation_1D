@@ -224,6 +224,9 @@ else:
     # here needs to be a function to read a density profile from a table and maybe to interpolate to the n layers
     pass
 
+# initialize array to record evolution of rho
+rho_evol = np.zeros([n, len(t)])
+
 # Calculate initial porosity and irreducible water content
 porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
 
@@ -231,6 +234,10 @@ porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
 # This function also sets irreducible water content to 0 for all layers that have initial T < 0
 # In contrast to previous version, the variable iwc is not changed as it now constitutes the maximum potential IRWC
 iw = hf.irwc_init(iwc, irwc_max, dx, n, T0)
+
+# initialize array to record evolution of irreducible water content and of cumulative bottom water
+iw_evol = np.zeros([n, len(t)])
+bw_evol = np.zeros(len(t))
 
 # Initial array of thermal conductivity
 k = hf.k_update(hf.C_to_K(T_evol[1:-1, 0]), rho, a, rho_tr, k_ref_i, k_ref_a)
@@ -256,9 +263,10 @@ else:
 
 # calculation of temperature profile over time
 if bottom_boundary:
-    T_evol, phi, refreeze, iw = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
-                                               T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt,
-                                               a, rho_tr, k_ref_i, k_ref_a)
+    T_evol, phi, refreeze, iw_evol, rho_evol, bw_evol = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
+                                                        T_evol, phi, k, refreeze, L, iw, iwc, iw_evol, bw_evol,
+                                                        rho, rho_evol, Cp, melt,
+                                                        a, rho_tr, k_ref_i, k_ref_a)
 else:
     T_evol, phi, refreeze = hf.calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol,
                                          phi, k, refreeze, L, iw, rho, Cp)

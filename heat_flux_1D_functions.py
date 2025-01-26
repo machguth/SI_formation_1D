@@ -9,9 +9,9 @@ This file contains a variety of functions that area called by heat_flux_1D.py
 import numpy as np
 import sys
 
-def create_test_data(val1, val2, length, rep):
-    a = np.zeros(length) + val1
-    b = np.zeros(length) + val2
+def create_test_data(val1, val2, length1, length2, rep):
+    a = np.zeros(length1) + val1
+    b = np.zeros(length2) + val2
     c = np.append(a, b)
     test_data = np.tile(c, rep)
     return test_data
@@ -124,8 +124,8 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
     return iw, T_out, rho, bottom_water
 
 
-def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt,
-                a, rho_tr, k_ref_i, k_ref_a):
+def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, iw_evol, bw_evol,
+                rho, rho_evol, Cp, melt, a, rho_tr, k_ref_i, k_ref_a):
 
     for j in range(0, len(t)-1):
         # calculation is for n + 2 layers. The n layers all have a thickness of D/n. The additional two layers are
@@ -165,8 +165,9 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
 
         # finally record temperature profile for later establishing figures and writing output table
         T_evol[:, j] = T
+        rho_evol[:, j] = rho
 
-    return T_evol, phi, refreeze, iw
+    return T_evol, phi, refreeze, iw_evol, rho_evol, bw_evol
 
 
 def calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, rho, Cp):

@@ -8,6 +8,7 @@ This file contains a variety of functions that area called by heat_flux_1D.py
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import os
 
 
@@ -157,24 +158,46 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
                                  'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
 
 
-def test_T_plotting(T_evol, t, melt, days, iwc, dt, n, dx, output_dir):
+def test_T_plotting(T_evol, phi, refreeze_c, rho_evol, t, melt, days, iwc, dt, n, dx, output_dir):
 
     colors = plt.cm.brg(np.linspace(0, 1, n))
     layer_depths = np.arange(n) * dx + dx
 
-    fig, ax = plt.subplots(1, figsize=(24, 20))
+    fig, ax = plt.subplots(4, figsize=(24, 35), gridspec_kw={'height_ratios': [2, 1, 1, 1]}, sharex=True)
+
+    # Use 5-day intervals for the x-ticks
+    ax[3].xaxis.set_major_locator(mdates.DayLocator(interval=5))
+    ax[3].xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
 
     for nvd, vd in enumerate(layer_depths):
-        ax.plot(t, T_evol[1 + nvd,:],
-                   color=colors[nvd], lw=1, ls='--', label='{:.2f}'.format(layer_depths[nvd]))
+        ax[0].plot(t[:-1], T_evol[1 + nvd,:-1],
+                   color=colors[nvd], lw=1, label='{:.2f}'.format(layer_depths[nvd]))  # ls='--',
 
-    # ax.plot(t, T_evol[20,:], label='1 m depth')
-    ax.plot(t, T_evol[0,:], label='Surface', color='gray')
+    ax[0].plot(t[:-1], T_evol[0,:-1], label='$T_{surface}$', color='gray', lw=2)
+    ax[0].set_title('Snow temperature at various depths')
+    ax[0].set_ylabel('T (°C)')
 
-    ax.set_xlabel('Time')
-    ax.set_ylabel('T (°C)')
+    ax[1].plot(t[:-1], phi[-1, :-1], color='Tab:blue')
+    ax[1].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
+    ax[1].set_ylabel('$\\phi$ (W m$^{-2}$)', color='Tab:blue')
+    ax[1].set_title('Heat flux $\\phi$ and superimposed ice formation at snow-slush interface')
+    ax2 = ax[1].twinx()
+    ax2.set_ylabel('S-imposed ice (mm)', color='Tab:orange')
+    ax2.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
+    ax2.plot(t[:-1], refreeze_c[0, :-1], color='Tab:orange')
 
-    fig.legend()
+    for nvd, vd in enumerate(layer_depths):
+        ax[2].plot(t[:-1], rho_evol[nvd, :-1], color=colors[nvd], lw=1)
+    ax[2].set_ylabel('$\\rho$ (kg m$^{-3}$)')
+    ax[2].set_title('Snow density $\\rho$ over time and depth')
+
+    ax[3].tick_params('x', rotation=45)
+    ax[3].set_xlabel('Time')
+    ax[2].set_ylabel('$IRWC$ (kg m$^{-3}$)')
+    ax[3].set_title('Irreducible water content $IRWC$ over time and depth')
+
+    ax[0].legend(bbox_to_anchor=(1.2, 1.0))
+    fig.tight_layout()
 
     plt.savefig(os.path.join(output_dir, 'test_T-plot_' + str(int(days)) + 'd_'
                              + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))

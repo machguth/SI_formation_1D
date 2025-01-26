@@ -24,6 +24,12 @@
       the smaller layer spacing and the larger alpha, the shorter the time steps need to be chosen
     - thermal conductivity is a function of density, following Calonne et al. (2019)
 
+    todo: irreducible water that is present after the snowpack has warmed to 0 °C does not yet add
+    to snow density by the moment the snowpack cools down. Irreducible water gets modified in hf.bucket_scheme()
+    and in hf.calc_closed(). Check whether both are needed, that they do not conflict and if both needed, that
+    both modify the density.
+
+
 """
 
 import numpy as np
@@ -55,7 +61,7 @@ dx = D/n  # [m] layer thickness
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
 rho = 400  # [kg m-3] Initial density of the snow or ice - can be scalar or density profile of depth D with n elements
-iwc = 3  # [% of pore volume] Max. possible irreducible water content in snow
+iwc = 5  # [% of pore volume] Max. possible irreducible water content in snow
 por = 0.4  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
 dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
 
@@ -107,6 +113,9 @@ else:
     # here needs to be a function to read a density profile from a table and maybe to interpolate to the n layers
     pass
 
+# initialize array to record evolution of rho
+rho_evol = np.zeros([n, len(t)])
+
 # Calculate initial porosity and irreducible water content
 porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
 
@@ -114,6 +123,10 @@ porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
 # This function also sets irreducible water content to 0 for all layers that have initial T < 0
 # In contrast to previous version, the variable iwc is not changed as it now constitutes the maximum potential IRWC
 iw = hf.irwc_init(iwc, irwc_max, dx, n, T0)
+
+# initialize array to record evolution of irreducible water content and of cumulative bottom water
+iw_evol = np.zeros([n, len(t)])
+bw_evol = np.zeros(len(t))
 
 # Initial array of thermal conductivity
 k = hf.k_update(hf.C_to_K(T_evol[1:-1, 0]), rho, a, rho_tr, k_ref_i, k_ref_a)
@@ -127,7 +140,7 @@ if isinstance(Tsurf, int):
 elif isinstance(Tsurf, str):
     # read a file, maybe interpolate temporally
     if Tsurf == 'test':
-        Tsurf = hf.create_test_data(0, -10, 2000, 5)
+        Tsurf = hf.create_test_data(0, -10, 1000, 3000, 5)
 else:
     pass
     # Tsurf = np.linspace(Tsurf[0:-1], Tsurf[1:], int(86400/dt))
@@ -138,12 +151,13 @@ if isinstance(melt, int) or isinstance(melt, float):
     melt = np.ones(len(t)) * melt
 elif isinstance(melt, str):
     if melt == 'test':
-        melt = hf.create_test_data(6.95e-05, 0, 2000, 5)
+        melt = hf.create_test_data(6.95e-05, 0, 1000, 3000, 5)
 
 # calculation of temperature profile over time
-T_evol, phi, refreeze, iw = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
-                                            T_evol, phi, k, refreeze, L, iw, iwc, rho, Cp, melt,
-                                            a, rho_tr, k_ref_i, k_ref_a)
+T_evol, phi, refreeze, iw_evol, rho_evol, bw_evol = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
+                                                    T_evol, phi, k, refreeze, L, iw, iwc, iw_evol, bw_evol,
+                                                    rho, rho_evol, Cp, melt,
+                                                    a, rho_tr, k_ref_i, k_ref_a)
 
 # cumulative sum of refrozen water
 refreeze_c = np.cumsum(refreeze, axis=1)
@@ -161,7 +175,7 @@ print('runtime', time_end_calc - time_start)
 hp.plotting(T_evol, dt_plot, dt, y, D, True, phi, days,
             t_final, t, refreeze_c, output_dir, 1, iwc)
 
-hp.test_T_plotting(T_evol, t, melt, days, iwc, dt, n, dx, output_dir)
+hp.test_T_plotting(T_evol, phi, refreeze_c, rho_evol, t, melt, days, iwc, dt, n, dx, output_dir)
 
 # write output
 # Xarray DataArray of all simulated temperatures
