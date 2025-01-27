@@ -56,7 +56,7 @@ end_date = '2022/08/31 23:30:00' # '2022/12/31 23:30:00'
 
 D = 0.5  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
 n = 10  # [] number of layers
-T0 = -5  # [°C]  initial temperature of all layers - ignored if compare_to_measurements or use_initial_T_profile
+T0 = -5  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
 # Thermal conductivity of ice or snow [W m-1 K-1]: now function of rho and T, following Calonne et al. (2019)
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
@@ -69,12 +69,14 @@ dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
 # currently assumed that there is always slush at the bottom
 
-Tsurf = 'test'  # 0  # [°C] Top boundary condition
+# Surface temperature (top boundary condition)
+Tsurf = [0, -10, 1000, 3000, 5]  # [°C] scalar, file name or five element list specifying synthetic data
 # bottom boundary condition.
 Tbottom = 0  # [°C]
 
 # Surface melt can be a scalar or an array of length equal number of time steps
-melt = 'test'  # 6.95e-05  # [m w.e. per time step] (at 300 s time steps, 6.95e-05 corresponds to ~20 mm w.e. melt per day)
+# (at 300 s time steps, 6.95e-05 corresponds to ~20 mm w.e. melt per day)
+melt = [6.95e-05, 0, 1000, 3000, 5]  # [m w.e. per time step] scalar, filename or 5 el. list specifying synthetic data
 
 # parameters used to calculate k based on Calonne et al. (2019)
 a = 0.02  # [m^3/kg]
@@ -140,8 +142,9 @@ if isinstance(Tsurf, int):
     Tsurf = np.ones(len(t)) * Tsurf
 elif isinstance(Tsurf, str):
     # read a file, maybe interpolate temporally
-    if Tsurf == 'test':
-        Tsurf = hf.create_test_data(0, -10, 1000, 3000, 5)
+    pass
+elif isinstance(Tsurf, list):  # in this case create synthetic test data
+    Tsurf = hf.create_test_data(Tsurf[0], Tsurf[1], Tsurf[2], Tsurf[3], Tsurf[4])
 else:
     pass
     # Tsurf = np.linspace(Tsurf[0:-1], Tsurf[1:], int(86400/dt))
@@ -151,8 +154,10 @@ else:
 if isinstance(melt, int) or isinstance(melt, float):
     melt = np.ones(len(t)) * melt
 elif isinstance(melt, str):
-    if melt == 'test':
-        melt = hf.create_test_data(6.95e-05, 0, 1000, 3000, 5)
+    # read a file, maybe interpolate temporally
+    pass
+elif isinstance(melt, list):
+        melt = hf.create_test_data(melt[0], melt[1], melt[2], melt[3], melt[4])
 
 # calculation of temperature profile over time
 T_evol, phi, refreeze, iw_evol, rho_evol, D_evol = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
