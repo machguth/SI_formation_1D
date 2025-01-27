@@ -158,50 +158,56 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
                                  'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
 
 
-def test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, bw_evol,
+def test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol,
                     t, melt, days, iwc, dt, n, dx, output_dir):
 
     colors = plt.cm.brg(np.linspace(0, 1, n))
     layer_depths = np.arange(n) * dx + dx
 
-    fig, ax = plt.subplots(4, figsize=(24, 35), gridspec_kw={'height_ratios': [2, 1, 1, 1]}, sharex=True)
+    fig, ax = plt.subplots(5, figsize=(24, 35),
+                           gridspec_kw={'height_ratios': [2, 0.25, 0.9, 0.9, 0.9]}, sharex=True)
 
     # Use 5-day intervals for the x-ticks
-    ax[3].xaxis.set_major_locator(mdates.DayLocator(interval=5))
-    ax[3].xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
+    ax[4].xaxis.set_major_locator(mdates.DayLocator(interval=5))
+    ax[4].xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
 
     for nvd, vd in enumerate(layer_depths):
         ax[0].plot(t[:-1], T_evol[1 + nvd,:-1],
                    color=colors[nvd], lw=1, label='{:.2f}'.format(layer_depths[nvd]))  # ls='--',
 
     ax[0].plot(t[:-1], T_evol[0,:-1], label='$T_{surface}$', color='gray', lw=2)
-    ax[0].set_title('Snow temperature $T$ at various depths')
+    ax[0].set_title('Layer snow temperatures $T$')
     ax[0].set_ylabel('$T$ (°C)')
 
-    ax[1].plot(t[:-1], phi[-1, :-1], color='Tab:blue')
-    ax[1].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
-    ax[1].set_ylabel('$\\phi$ (W m$^{-2}$)', color='Tab:blue')
-    ax[1].set_title('Heat flux $\\phi$ and superimposed ice formation $SIF$ at snow-slush interface')
-    ax2 = ax[1].twinx()
+    ax[1].set_ylabel('$M$ (mm w.e day$^{-1}$)')
+    ax[1].set_title('Surface melt $M$')
+    # ax[1].tick_params(axis='y', color='Tab:orange')
+    ax[1].plot(t[:-1], melt[:len(t[:-1])] * (86400 / dt) * 1000, color='gray')  # conv. to mm day^-1
+
+    ax[2].plot(t[:-1], phi[-1, :-1], color='Tab:blue')
+    ax[2].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
+    ax[2].set_ylabel('$\\phi$ (W m$^{-2}$)', color='Tab:blue')
+    ax[2].set_title('Bottom heat flux $\\phi$ and superimposed ice formation $SIF$ at snow-slush interface')
+    ax2 = ax[2].twinx()
     ax2.set_ylabel('SIF (mm ice)', color='Tab:orange')
     ax2.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
     ax2.plot(t[:-1], refreeze_c[0, :-1], color='Tab:orange')
 
     for nvd, vd in enumerate(layer_depths):
-        ax[2].plot(t[:-1], rho_evol[nvd, :-1], color=colors[nvd], lw=1)
-    ax[2].set_ylabel('$\\rho$ (kg m$^{-3}$)')
-    ax[2].set_title('Snow density $\\rho$ over time and depth')
+        ax[3].plot(t[:-1], rho_evol[nvd, :-1], color=colors[nvd], lw=1)
+    ax[3].set_ylabel('$\\rho$ (kg m$^{-3}$)')
+    ax[3].set_title('Layer snow densities $\\rho$')
 
     for nvd, vd in enumerate(layer_depths):
-        ax[3].plot(t[:-1], iw_evol[nvd, :-1], color=colors[nvd], lw=1)
-    ax[3].tick_params('x', rotation=45)
-    ax[3].set_xlabel('Date')
-    ax[3].set_ylabel('$W_l$ (kg m$^{-3}$)')
-    ax[3].set_title('Water content $W_l$ and bottom water $W_b$ over time and depth')
-    ax3 = ax[3].twinx()
-    ax3.set_ylabel('$W_b$ (mm)', color='Tab:orange')
-    ax3.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
-    ax3.plot(t[:-1], bw_evol[:-1], color='Tab:orange')
+        ax[4].plot(t[:-1], iw_evol[nvd, :-1], color=colors[nvd], lw=1)
+    ax[4].tick_params('x', rotation=45)
+    ax[4].set_xlabel('Date')
+    ax[4].set_ylabel('$W_l$ (kg m$^{-3}$)')
+    ax[4].set_title('Layer water content $W_l$ and cumulative discharge $\Sigma D$ at snowpack bottom')
+    ax4 = ax[4].twinx()
+    ax4.set_ylabel('$\Sigma D$ (mm)', color='Tab:orange')
+    ax4.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
+    ax4.plot(t[:-1], D_evol[:-1] * 1000, color='Tab:orange')  # convert to mm
 
     ax[0].legend(bbox_to_anchor=(1.2, 1.0))
     fig.tight_layout()

@@ -125,9 +125,9 @@ porosity, irwc_max = hf.rho_por_irwc_max(rho, iwc)
 # In contrast to previous version, the variable iwc is not changed as it now constitutes the maximum potential IRWC
 iw = hf.irwc_init(iwc, irwc_max, dx, n, T0)
 
-# initialize array to record evolution of irreducible water content and of cumulative bottom water
+# initialize array to record evolution of irreducible water content and of cumulative discharge D
 iw_evol = np.zeros([n, len(t)])
-bw_evol = np.zeros(len(t))
+D_evol = np.zeros(len(t))
 
 # Initial array of thermal conductivity
 k = hf.k_update(hf.C_to_K(T_evol[1:-1, 0]), rho, a, rho_tr, k_ref_i, k_ref_a)
@@ -155,8 +155,8 @@ elif isinstance(melt, str):
         melt = hf.create_test_data(6.95e-05, 0, 1000, 3000, 5)
 
 # calculation of temperature profile over time
-T_evol, phi, refreeze, iw_evol, rho_evol, bw_evol = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
-                                                    T_evol, phi, k, refreeze, L, iw, iwc, iw_evol, bw_evol,
+T_evol, phi, refreeze, iw_evol, rho_evol, D_evol = hf.calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt,
+                                                    T_evol, phi, k, refreeze, L, iw, iwc, iw_evol, D_evol,
                                                     rho, rho_evol, Cp, melt,
                                                     a, rho_tr, k_ref_i, k_ref_a)
 
@@ -166,7 +166,7 @@ refreeze_c = np.cumsum(refreeze, axis=1)
 refreeze_c /= por
 
 # cumulative sum of bottom water
-bw_evol = np.cumsum(bw_evol)
+D_evol = np.cumsum(D_evol)
 
 print('\nHeat flux at the top of the domain, end of model run: {:.3f}'.format(phi[0, -2]) + ' W m-2')
 print('Heat flux at the bottom of the domain, end of model run: {:.3f}'.format(phi[-2, -2]) + ' W m-2')
@@ -179,7 +179,7 @@ print('runtime', time_end_calc - time_start)
 hp.plotting(T_evol, dt_plot, dt, y, D, True, phi, days,
             t_final, t, refreeze_c, output_dir, 1, iwc)
 
-hp.test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, bw_evol, t, melt, days, iwc, dt, n, dx, output_dir)
+hp.test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol, t, melt, days, iwc, dt, n, dx, output_dir)
 
 # write output
 # Xarray DataArray of all simulated temperatures

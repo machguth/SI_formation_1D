@@ -99,8 +99,8 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
     irwc_added = irwc_available - irwc_cs_m_pos
     irwc_added = irwc_added * (irwc_added > 0)
     irwc_existing = irwc_added + irwc_existing
-    bottom_water = melt_f - np.sum(irwc_added)
-    bottom_water *= (bottom_water > 0)
+    discharge = melt_f - np.sum(irwc_added)
+    discharge *= (discharge > 0) * dx  # ensure no negative values and also convert to metres w.e.
 
     # calculate the amount of refreezing
     pot_Lh_rel_layer = irwc_existing * 1000 * dx * L
@@ -121,10 +121,10 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
     iw = irwc_existing - refreezing
     iw *= 1000 * dx
 
-    return iw, T_out, rho, bottom_water
+    return iw, T_out, rho, discharge
 
 
-def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, iw_evol, bw_evol,
+def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, iwc, iw_evol, D_evol,
                 rho, rho_evol, Cp, melt, a, rho_tr, k_ref_i, k_ref_a):
 
     for j in range(0, len(t)-1):
@@ -157,7 +157,7 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
 
         # calculate percolation as per bucket scheme
         # also update T_evol for warming from latent heat release where water percolates into layers with T_evol < 0 °C
-        iw, T[1:-1], rho, bottom_water = bucket_scheme(L, Cp, melt, iw, irwc_max, T[1:-1], rho, dx, j)
+        iw, T[1:-1], rho, discharge = bucket_scheme(L, Cp, melt, iw, irwc_max, T[1:-1], rho, dx, j)
 
         # update k and alpha for the next iteration
         k = k_update(T[1:-1], rho, a, rho_tr, k_ref_i, k_ref_a)
@@ -167,9 +167,9 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
         T_evol[:, j] = T
         rho_evol[:, j] = rho
         iw_evol[:, j] = iw / dx  # convert to kg m^-3
-        bw_evol[j] = bottom_water
+        D_evol[j] = discharge
 
-    return T_evol, phi, refreeze, iw_evol, rho_evol, bw_evol
+    return T_evol, phi, refreeze, iw_evol, rho_evol, D_evol
 
 
 def calc_open(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L, iw, rho, Cp):
