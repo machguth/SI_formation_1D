@@ -179,7 +179,7 @@ def test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol,
     ax[0].set_title('Layer snow temperatures $T$')
     ax[0].set_ylabel('$T$ (°C)')
 
-    ax[1].set_ylabel('$M$ (mm w.e day$^{-1}$)')
+    ax[1].set_ylabel('$M$ (mm w.e. day$^{-1}$)')
     ax[1].set_title('Surface melt $M$')
     # ax[1].tick_params(axis='y', color='Tab:orange')
     ax[1].plot(t[:-1], melt[:len(t[:-1])] * (86400 / dt) * 1000, color='gray')  # conv. to mm day^-1
@@ -209,7 +209,7 @@ def test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol,
     ax4.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
     ax4.plot(t[:-1], D_evol[:-1] * 1000, color='Tab:orange')  # convert to mm
 
-    ax[0].legend(bbox_to_anchor=(1.2, 1.0))
+    ax[0].legend(bbox_to_anchor=(1.2, 1.0), title='Depth (m)')
     fig.tight_layout()
 
     plt.savefig(os.path.join(output_dir, 'test_T-plot_' + str(int(days)) + 'd_'
