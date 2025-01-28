@@ -75,7 +75,7 @@ Tsurf = [0, -10, 1000, 3000, 5]  # [°C] scalar, file name or five element list 
 Tbottom = 0  # [°C]
 
 # Surface melt can be a scalar or an array of length equal number of time steps
-# (at 300 s time steps, 6.95e-05 corresponds to ~20 mm w.e. melt per day)
+# (at 300 s time steps, 6.95e-05 m w.e. per time step corresponds to ~20 mm w.e. melt per day)
 melt = [6.95e-05, 0, 1000, 3000, 5]  # [m w.e. per time step] scalar, filename or 5 el. list specifying synthetic data
 
 # parameters used to calculate k based on Calonne et al. (2019)
@@ -86,7 +86,8 @@ k_ref_a = 0.024  # [W m^-1 k^-1]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
 # output_dir = r'C:\Users\machg\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
-output_dir = r'O:\test_1D_heat_conduction'
+# output_dir = r'O:\test_1D_heat_conduction'
+output_dir = r'D:\modelling\1d_heat_transfer'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create
