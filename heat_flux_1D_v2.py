@@ -54,6 +54,8 @@ time_start = datetime.datetime.now()
 start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
 end_date = '2022/08/31 23:30:00' # '2022/12/31 23:30:00'
 
+print('Marcus, use versioning!')
+
 D = 0.5  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
 n = 10  # [] number of layers
 T0 = -5  # [°C]  initial temperature of all layers
