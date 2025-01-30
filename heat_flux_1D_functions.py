@@ -16,6 +16,18 @@ def create_test_data(val1, val2, length1, length2, rep):
     test_data = np.tile(c, rep)
     return test_data
 
+def neumann_criteria():
+
+    rho_range = np.arange(200, 1000, 100)
+    iw = np.zeros(len(rho_range))
+
+    k = k_update(T, rho, a, rho_tr, k_ref_i, k_ref_a)
+
+    alpha = alpha_update(k, rho_range, Cp, n, iw)
+
+    nm = alpha * dt / dx**2
+
+
 def C_to_K(T):
     T += 273.15
     return T
