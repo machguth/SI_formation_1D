@@ -217,8 +217,8 @@ def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evo
     ax[0].legend(bbox_to_anchor=(1.2, 1.0), title='Depth (m)')
     fig.tight_layout()
 
-    plt.savefig(os.path.join(output_dir, 'test_T-plot_' + str(int(days)) + 'd_'
-                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))
+    plt.savefig(os.path.join(output_dir, 'test_plot_D{:.2f}'.format(layer_depths[-1]) + 'm_' + str(int(days)) + 'd_'
+                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '.png'))
 
 
 def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evol, D_evol,
@@ -256,16 +256,6 @@ def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw
     ax[2].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
     ax[2].set_ylabel('$\\phi$ (W m$^{-2}$)', color='Tab:blue')
     ax[2].set_title('Heat flux $\\phi$')
-    # ax2a = ax[2].twinx()
-    # ax2b = ax[2].twinx()
-    # ax2a.set_ylabel('SIF (mm w.e.)', color='Tab:orange')
-    # ax2a.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
-    # ax2a.plot(t[tr[0]:tr[1]], refreeze_c[0, tr[0]:tr[1]], color='Tab:orange')
-    # ax2b.plot(t[tr[0]:tr[1]], refreeze_c_mmice[0, tr[0]:tr[1]], color='Tab:orange')
-    # ax2b.set_ylabel('SIF (mm ice)', color='Tab:orange')
-    # ax2b.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
-    # # right, left, top, bottom
-    # ax2b.spines['right'].set_position(('outward', 140))
 
     for nvd, vd in enumerate(layer_depths[sel_d_idx]):
         ax[3].plot(t[tr[0]:tr[1]], rho_evol[sel_d_idx[nvd], tr[0]:tr[1]], color=colors[sel_d_idx[nvd]], lw=1)
@@ -286,5 +276,5 @@ def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw
     ax[0].legend(bbox_to_anchor=(1.2, 1.0), title='Depth (m)')
     fig.tight_layout()
 
-    plt.savefig(os.path.join(output_dir, 'test_T-detail_' + str(int(days)) + 'd_'
-                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))
+    plt.savefig(os.path.join(output_dir, 'test_details_D{:.2f}'.format(layer_depths[-1]) + 'm_' + str(int(days)) + 'd_'
+                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '.png'))
