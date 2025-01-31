@@ -227,20 +227,27 @@ def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw
     colors = plt.cm.brg(np.linspace(0, 1, n))
     layer_depths = np.arange(n) * dx + dx
 
-    sel_d_idx = [1, 4]
+    sel_d_idx = [1, 5]  # indices of layers whose behaviour should be analysed
 
-    tr = [3999, 4300]
+    tr = [3999, 4200]
 
     fig, ax = plt.subplots(5, figsize=(24, 35),
                            gridspec_kw={'height_ratios': [2, 0.25, 0.9, 0.9, 0.9]}, sharex=True)
 
     # Use 5-day intervals for the x-ticks
-    ax[4].xaxis.set_major_locator(mdates.HourLocator(interval=1))
+    ax[4].xaxis.set_major_locator(mdates.HourLocator(interval=2))
     ax[4].xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y %H:%M'))
 
     for nvd, vd in enumerate(layer_depths[sel_d_idx]):
         ax[0].plot(t[tr[0]:tr[1]], T_evol[1 + sel_d_idx[nvd], tr[0]:tr[1]],
                    color=colors[nvd], lw=1, label='{:.2f}'.format(layer_depths[sel_d_idx[nvd]]))  # ls='--',
+
+    ax[0].plot(t[tr[0]:tr[1]], T_evol[0,tr[0]:tr[1]], label='$T_{surface}$', color='gray', lw=2)
+    ax[0].set_title('Layer snow temperatures $T$')
+    ax[0].set_ylabel('$T$ (°C)')
+
+    ax[4].tick_params('x', rotation=45)
+    ax[4].set_xlabel('Date')
 
     plt.savefig(os.path.join(output_dir, 'test_T-detail_' + str(int(days)) + 'd_'
                              + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))
