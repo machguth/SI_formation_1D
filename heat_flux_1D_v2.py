@@ -28,7 +28,6 @@
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 import heat_flux_1D_functions as hf
 import heat_flux_1D_plotting as hp
@@ -36,6 +35,8 @@ import heat_flux_1D_output as ho
 import datetime
 import os
 import warnings
+
+from heat_flux_1D import refreeze_c
 
 warnings.filterwarnings("ignore")
 
@@ -57,7 +58,7 @@ Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
 rho = 350  # [kg m-3] Initial density of the snow or ice - can be scalar or density profile of depth D with n elements
 iwc = 5  # [% of pore volume] Max. possible irreducible water content in snow
-por = 0.4  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
+por = 0.45  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
 dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
 
 # The model calculates how much slush refreezes into superimposed ice (SI). Slush with refreezing can be
@@ -163,7 +164,7 @@ T_evol, phi, refreeze, iw_evol, rho_evol, D_evol = hf.calc_closed(t, n, T, dTdt,
 # cumulative sum of refrozen water
 refreeze_c = np.cumsum(refreeze, axis=1)
 # and correct for the fact that water occupies only the pore space
-refreeze_c /= por
+refreeze_c_mmice = refreeze_c / por
 
 # cumulative sum of bottom water
 D_evol = np.cumsum(D_evol)
@@ -179,7 +180,11 @@ print('runtime', time_end_calc - time_start)
 hp.plotting(T_evol, dt_plot, dt, y, D, True, phi, days,
             t_final, t, refreeze_c, output_dir, 1, iwc)
 
-hp.test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol, t, melt, days, iwc, dt, n, dx, output_dir)
+hp.test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol,
+                    iw_evol, D_evol, t, melt, days, iwc, dt, n, dx, output_dir)
+
+hp.test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evol, D_evol,
+                    t, melt, days, iwc, dt, n, dx, output_dir)
 
 # write output netCDF files
 ho.write_output(T_evol, refreeze, output_dir, y, t)

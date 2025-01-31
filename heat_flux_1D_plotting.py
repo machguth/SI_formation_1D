@@ -158,7 +158,7 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
                                  'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
 
 
-def test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol,
+def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evol, D_evol,
                     t, melt, days, iwc, dt, n, dx, output_dir):
 
     colors = plt.cm.brg(np.linspace(0, 1, n))
@@ -188,10 +188,16 @@ def test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol,
     ax[2].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
     ax[2].set_ylabel('$\\phi$ (W m$^{-2}$)', color='Tab:blue')
     ax[2].set_title('Bottom heat flux $\\phi$ and superimposed ice formation $SIF$ at snow-slush interface')
-    ax2 = ax[2].twinx()
-    ax2.set_ylabel('SIF (mm ice)', color='Tab:orange')
-    ax2.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
-    ax2.plot(t[:-1], refreeze_c[0, :-1], color='Tab:orange')
+    ax2a = ax[2].twinx()
+    ax2b = ax[2].twinx()
+    ax2a.set_ylabel('SIF (mm w.e.)', color='Tab:orange')
+    ax2a.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
+    ax2a.plot(t[:-1], refreeze_c[0, :-1], color='Tab:orange')
+    ax2b.plot(t[:-1], refreeze_c_mmice[0, :-1], color='Tab:orange')
+    ax2b.set_ylabel('SIF (mm ice)', color='Tab:orange')
+    ax2b.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
+    # right, left, top, bottom
+    ax2b.spines['right'].set_position(('outward', 140))
 
     for nvd, vd in enumerate(layer_depths):
         ax[3].plot(t[:-1], rho_evol[nvd, :-1], color=colors[nvd], lw=1)
@@ -213,4 +219,28 @@ def test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol,
     fig.tight_layout()
 
     plt.savefig(os.path.join(output_dir, 'test_T-plot_' + str(int(days)) + 'd_'
+                             + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))
+
+def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evol, D_evol,
+                    t, melt, days, iwc, dt, n, dx, output_dir):
+
+    colors = plt.cm.brg(np.linspace(0, 1, n))
+    layer_depths = np.arange(n) * dx + dx
+
+    sel_d_idx = [1, 4]
+
+    tr = [3999, 4300]
+
+    fig, ax = plt.subplots(5, figsize=(24, 35),
+                           gridspec_kw={'height_ratios': [2, 0.25, 0.9, 0.9, 0.9]}, sharex=True)
+
+    # Use 5-day intervals for the x-ticks
+    ax[4].xaxis.set_major_locator(mdates.HourLocator(interval=1))
+    ax[4].xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y %H:%M'))
+
+    for nvd, vd in enumerate(layer_depths[sel_d_idx]):
+        ax[0].plot(t[tr[0]:tr[1]], T_evol[1 + sel_d_idx[nvd], tr[0]:tr[1]],
+                   color=colors[nvd], lw=1, label='{:.2f}'.format(layer_depths[sel_d_idx[nvd]]))  # ls='--',
+
+    plt.savefig(os.path.join(output_dir, 'test_T-detail_' + str(int(days)) + 'd_'
                              + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))
