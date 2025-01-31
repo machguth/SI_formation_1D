@@ -181,7 +181,6 @@ def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evo
 
     ax[1].set_ylabel('$M$ (mm w.e. day$^{-1}$)')
     ax[1].set_title('Surface melt $M$')
-    # ax[1].tick_params(axis='y', color='Tab:orange')
     ax[1].plot(t[:-1], melt[:len(t[:-1])] * (86400 / dt) * 1000, color='gray')  # conv. to mm day^-1
 
     ax[2].plot(t[:-1], phi[-1, :-1], color='Tab:blue')
@@ -221,33 +220,71 @@ def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evo
     plt.savefig(os.path.join(output_dir, 'test_T-plot_' + str(int(days)) + 'd_'
                              + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))
 
+
 def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evol, D_evol,
                     t, melt, days, iwc, dt, n, dx, output_dir):
 
     colors = plt.cm.brg(np.linspace(0, 1, n))
     layer_depths = np.arange(n) * dx + dx
 
-    sel_d_idx = [1, 5]  # indices of layers whose behaviour should be analysed
+    sel_d_idx = [0, 1, 2, 3]  # indices of layers whose behaviour should be analysed
 
-    tr = [3999, 4200]
+    tr = [3980, 4100]
 
     fig, ax = plt.subplots(5, figsize=(24, 35),
                            gridspec_kw={'height_ratios': [2, 0.25, 0.9, 0.9, 0.9]}, sharex=True)
 
     # Use 5-day intervals for the x-ticks
-    ax[4].xaxis.set_major_locator(mdates.HourLocator(interval=2))
+    ax[4].xaxis.set_major_locator(mdates.HourLocator(interval=1))
     ax[4].xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y %H:%M'))
 
     for nvd, vd in enumerate(layer_depths[sel_d_idx]):
         ax[0].plot(t[tr[0]:tr[1]], T_evol[1 + sel_d_idx[nvd], tr[0]:tr[1]],
-                   color=colors[nvd], lw=1, label='{:.2f}'.format(layer_depths[sel_d_idx[nvd]]))  # ls='--',
+                   color=colors[sel_d_idx[nvd]], lw=1, label='{:.2f}'.format(layer_depths[sel_d_idx[nvd]]))  # ls='--',
 
     ax[0].plot(t[tr[0]:tr[1]], T_evol[0,tr[0]:tr[1]], label='$T_{surface}$', color='gray', lw=2)
     ax[0].set_title('Layer snow temperatures $T$')
     ax[0].set_ylabel('$T$ (°C)')
 
+    ax[1].set_ylabel('$M$ (mm w.e. day$^{-1}$)')
+    ax[1].set_title('Surface melt $M$')
+    ax[1].plot(t[tr[0]:tr[1]], melt[tr[0]:tr[1]] * (86400 / dt) * 1000, color='gray')  # conv. to mm day^-1
+
+    for nvd, vd in enumerate(layer_depths[sel_d_idx]):
+        ax[2].plot(t[tr[0]:tr[1]], phi[1 + sel_d_idx[nvd],tr[0]:tr[1]], color=colors[sel_d_idx[nvd]])
+    ax[2].plot([t[tr[0]], t[tr[1]]], [0, 0], ls=':', color='gray')
+    ax[2].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
+    ax[2].set_ylabel('$\\phi$ (W m$^{-2}$)', color='Tab:blue')
+    ax[2].set_title('Heat flux $\\phi$')
+    # ax2a = ax[2].twinx()
+    # ax2b = ax[2].twinx()
+    # ax2a.set_ylabel('SIF (mm w.e.)', color='Tab:orange')
+    # ax2a.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
+    # ax2a.plot(t[tr[0]:tr[1]], refreeze_c[0, tr[0]:tr[1]], color='Tab:orange')
+    # ax2b.plot(t[tr[0]:tr[1]], refreeze_c_mmice[0, tr[0]:tr[1]], color='Tab:orange')
+    # ax2b.set_ylabel('SIF (mm ice)', color='Tab:orange')
+    # ax2b.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
+    # # right, left, top, bottom
+    # ax2b.spines['right'].set_position(('outward', 140))
+
+    for nvd, vd in enumerate(layer_depths[sel_d_idx]):
+        ax[3].plot(t[tr[0]:tr[1]], rho_evol[sel_d_idx[nvd], tr[0]:tr[1]], color=colors[sel_d_idx[nvd]], lw=1)
+    ax[3].set_ylabel('$\\rho$ (kg m$^{-3}$)')
+    ax[3].set_title('Layer snow densities $\\rho$')
+
+    for nvd, vd in enumerate(layer_depths[sel_d_idx]):
+        ax[4].plot(t[tr[0]:tr[1]], iw_evol[sel_d_idx[nvd], tr[0]:tr[1]], color=colors[sel_d_idx[nvd]], lw=1)
     ax[4].tick_params('x', rotation=45)
     ax[4].set_xlabel('Date')
+    ax[4].set_ylabel('$W_l$ (kg m$^{-3}$)')
+    ax[4].set_title('Layer water content $W_l$ and cumulative discharge $\Sigma D$ at snowpack bottom')
+    ax4 = ax[4].twinx()
+    ax4.set_ylabel('$\Sigma D$ (mm)', color='Tab:orange')
+    ax4.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
+    ax4.plot(t[tr[0]:tr[1]], D_evol[tr[0]:tr[1]] * 1000, color='Tab:orange')  # convert to mm
+
+    ax[0].legend(bbox_to_anchor=(1.2, 1.0), title='Depth (m)')
+    fig.tight_layout()
 
     plt.savefig(os.path.join(output_dir, 'test_T-detail_' + str(int(days)) + 'd_'
                              + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_comp_meas' + '.png'))

@@ -36,8 +36,6 @@ import datetime
 import os
 import warnings
 
-from heat_flux_1D import refreeze_c
-
 warnings.filterwarnings("ignore")
 
 time_start = datetime.datetime.now()
