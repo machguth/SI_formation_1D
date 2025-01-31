@@ -196,7 +196,7 @@ def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evo
     ax2b.set_ylabel('SIF (mm ice)', color='Tab:orange')
     ax2b.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
     # right, left, top, bottom
-    ax2b.spines['right'].set_position(('outward', 140))
+    ax2b.spines['right'].set_position(('outward', 120))
 
     for nvd, vd in enumerate(layer_depths):
         ax[3].plot(t[:-1], rho_evol[nvd, :-1], color=colors[nvd], lw=1)
@@ -206,6 +206,8 @@ def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evo
     for nvd, vd in enumerate(layer_depths):
         ax[4].plot(t[:-1], iw_evol[nvd, :-1], color=colors[nvd], lw=1)
     ax[4].tick_params('x', rotation=45)
+    for tick in ax[4].xaxis.get_majorticklabels():
+        tick.set_horizontalalignment('right')
     ax[4].set_xlabel('Date')
     ax[4].set_ylabel('$W_l$ (kg m$^{-3}$)')
     ax[4].set_title('Layer water content $W_l$ and cumulative discharge $\Sigma D$ at snowpack bottom')
@@ -213,6 +215,13 @@ def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evo
     ax4.set_ylabel('$\Sigma D$ (mm)', color='Tab:orange')
     ax4.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
     ax4.plot(t[:-1], D_evol[:-1] * 1000, color='Tab:orange')  # convert to mm
+
+    # make all ticks a bit longer
+    for nn in ax:
+        nn.tick_params(length=6)
+    ax2a.tick_params(length=6)
+    ax2b.tick_params(length=6)
+    ax4.tick_params(length=6)
 
     ax[0].legend(bbox_to_anchor=(1.2, 1.0), title='Depth (m)')
     fig.tight_layout()
@@ -255,7 +264,7 @@ def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw
     ax[2].plot([t[tr[0]], t[tr[1]]], [0, 0], ls=':', color='gray')
     ax[2].tick_params(axis='y', color='Tab:blue', labelcolor='Tab:blue')
     ax[2].set_ylabel('$\\phi$ (W m$^{-2}$)', color='Tab:blue')
-    ax[2].set_title('Heat flux $\\phi$')
+    ax[2].set_title('Layer heat flux $\\phi$')
 
     for nvd, vd in enumerate(layer_depths[sel_d_idx]):
         ax[3].plot(t[tr[0]:tr[1]], rho_evol[sel_d_idx[nvd], tr[0]:tr[1]], color=colors[sel_d_idx[nvd]], lw=1)
@@ -265,6 +274,8 @@ def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw
     for nvd, vd in enumerate(layer_depths[sel_d_idx]):
         ax[4].plot(t[tr[0]:tr[1]], iw_evol[sel_d_idx[nvd], tr[0]:tr[1]], color=colors[sel_d_idx[nvd]], lw=1)
     ax[4].tick_params('x', rotation=45)
+    for tick in ax[4].xaxis.get_majorticklabels():
+        tick.set_horizontalalignment('right')
     ax[4].set_xlabel('Date')
     ax[4].set_ylabel('$W_l$ (kg m$^{-3}$)')
     ax[4].set_title('Layer water content $W_l$ and cumulative discharge $\Sigma D$ at snowpack bottom')
@@ -272,6 +283,11 @@ def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw
     ax4.set_ylabel('$\Sigma D$ (mm)', color='Tab:orange')
     ax4.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
     ax4.plot(t[tr[0]:tr[1]], D_evol[tr[0]:tr[1]] * 1000, color='Tab:orange')  # convert to mm
+
+    # make all ticks a bit longer
+    for nn in ax:
+        nn.tick_params(length=6)
+    ax4.tick_params(length=6)
 
     ax[0].legend(bbox_to_anchor=(1.2, 1.0), title='Depth (m)')
     fig.tight_layout()
