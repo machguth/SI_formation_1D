@@ -17,25 +17,28 @@ def create_test_data(val1, val2, length1, length2, rep):
     return test_data
 
 def neumann_criteria():
+    # this piece of code test whether the Neumann numerical stability criterion is always satisfied
+    # for the given dx and dt, as well as for a possible range of alpha (depending on rho and T)
 
-    rho_range = np.arange(200, 1000, 100)
-    iw = np.zeros(len(rho_range))
+    rho_range = np.arange(200, 1000, 100)  # assuming possible range in rho is 200 to 900 kg m^3
+    T_range = np.arange()
+    iw_zero = np.zeros(len(rho_range))  # IRWC irrelevant here but is input to alpha_update() --> simply set to zero
 
     k = k_update(T, rho, a, rho_tr, k_ref_i, k_ref_a)
 
-    alpha = alpha_update(k, rho_range, Cp, n, iw)
+    alpha = alpha_update(k, rho_range, Cp, n, iw_zero)
 
     nm = alpha * dt / dx**2
 
 
 def C_to_K(T):
-    T += 273.15
-    return T
+    TK = T + 273.15
+    return TK
 
 
 def K_to_C(T):
-    T -= 273.15
-    return T
+    TC = T - 273.15
+    return TC
 
 
 def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
@@ -65,7 +68,7 @@ def alpha_update(k, rho, Cp, n, iw):
 def k_update(T, rho, a, rho_tr, k_ref_i, k_ref_a):
 
     k_air = 1.5207E-11 * T**3 - 4.8574E-08 * T**2 + 1.0184E-04 * T - 3.9333E-04
-    k_ice = 9.828 * np.exp(-5.7 * 10**(-3) * T)  # Based on Cuffex and Paterson (2010)
+    k_ice = 9.828 * np.exp(-5.7 * 10**(-3) * T)  # Based on Cuffey and Paterson (2010)
 
     k_ref_firn = 2.107 + 0.003618 * (rho - 917)
     k_ref_snow = 0.024 - 1.23 * 10**(-4) * rho + 2.5 * 10**(-6) * rho**2
@@ -115,8 +118,8 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
     discharge *= (discharge > 0) * dx  # ensure no negative values and also convert to metres w.e.
 
     # calculate the amount of refreezing
-    pot_Lh_rel_layer = irwc_existing * 1000 * dx * L
-    heat_capacity_layer = 1 * rho * dx * T_in * Cp * (-1)  # 1 to represent the full layer, -1 bcs. T_in negative
+    pot_Lh_rel_layer = irwc_existing * 1000 * dx * L  # [J m^-2 or simply J]
+    heat_capacity_layer = 1 * rho * dx * T_in * Cp * (-1)  # [J m^-2 or J] 1 represents full layer, -1 bcs. T_in neg.
     # make sure layer is not warmed beyond 0 °C (in case pot_Lh_rel_layer > heat_capacity_layer)
     Lh_release = pot_Lh_rel_layer * (pot_Lh_rel_layer < heat_capacity_layer) + \
                  heat_capacity_layer * (pot_Lh_rel_layer > heat_capacity_layer)
@@ -157,23 +160,29 @@ def calc_closed(t, n, T, dTdt, alpha, dx, Tsurf, dt, T_evol, phi, k, refreeze, L
 
         # To calculate heat transfer to the water layer at the bottom (not through the water),
         # an n+1 value of thermal conductivity is needed. For the moment, simply duplicate the lowermost k value
-        phi[:, j] = np.append(k, k[-1]) * (T[:-1] - T[1:]) / dx
+        phi[:, j] = np.append(k, k[-1]) * (T[:-1] - T[1:]) / dx  # [kg s^-3]
 
         # calculate the refreezing of irreducible water as an effect of heat conduction
-        iw -= (-1) * phi[:-1, j] * dt / L * (phi[:-1, j] <= 0)  # *(phi[:-1, j] <= 0) otherwise iw created if phi > 0
+        # code below calculates refreezing and density change due to heat flux between layers. This in contrast to
+        # bucket_scheme() which calculates refreezing in layers due to latent heat release
+        iw_old = iw
+        # below *(phi[:-1, j] <= 0) else iw created if phi > 0
+        iw = iw_old - (-1) * phi[:-1, j] * dt / L * (phi[:-1, j] <= 0)   # [kg m^-2 = m w.e.]
         iw *= iw > 0  # check there is no negative iw
+        iw_delta = iw_old - iw
+        rho += iw_delta / dx  # [kg m^-3] see bucket_scheme() for explanation
 
         # calculate superimposed ice formation at the bottom of the domain
-        refreeze[0, j] = (-1) * phi[-1, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at bottom of domain
-        refreeze[1, j] = phi[0, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at top of domain
+        refreeze[0, j] = (-1) * phi[-1, j] * dt / L  # [kg m^-2 = m w.e.] refrozen water mm (w.e.) per time step, at bottom of domain
+        # refreeze[1, j] = phi[0, j] * dt / L  # [mm] refrozen water mm (w.e.) per time step, at top of domain
 
         # calculate percolation as per bucket scheme
         # also update T_evol for warming from latent heat release where water percolates into layers with T_evol < 0 °C
         iw, T[1:-1], rho, discharge = bucket_scheme(L, Cp, melt, iw, irwc_max, T[1:-1], rho, dx, j)
 
         # update k and alpha for the next iteration
-        k = k_update(T[1:-1], rho, a, rho_tr, k_ref_i, k_ref_a)
-        alpha = alpha_update(k, rho, Cp, n, iw)
+        k = k_update(C_to_K(T[1:-1]), rho, a, rho_tr, k_ref_i, k_ref_a)  # [W m^-1 K^-1   or   kg m s^-3 K^-1]
+        alpha = alpha_update(k, rho, Cp, n, iw)  # []
 
         # finally record temperature profile for later establishing figures and writing output table
         T_evol[:, j] = T

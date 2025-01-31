@@ -24,13 +24,6 @@
       the smaller layer spacing and the larger alpha, the shorter the time steps need to be chosen
     - thermal conductivity is a function of density, following Calonne et al. (2019)
 
-    todo: irreducible water that is present after the snowpack has warmed to 0 °C does not yet add
-    to snow density by the moment the snowpack cools down. Irreducible water gets modified in hf.bucket_scheme()
-    and in hf.calc_closed(). Check whether both are needed, that they do not conflict and if both needed, that
-    both modify the density.
-    todo: bottom water does not yet work properly
-
-
 """
 
 import numpy as np
@@ -39,6 +32,7 @@ import xarray as xr
 
 import heat_flux_1D_functions as hf
 import heat_flux_1D_plotting as hp
+import heat_flux_1D_output as ho
 import datetime
 import os
 import warnings
@@ -55,13 +49,13 @@ start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00' # '2022/09/06 14:15:
 end_date = '2022/08/31 23:30:00' # '2022/12/31 23:30:00'
 
 D = 0.5  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
-n = 10  # [] number of layers
-T0 = -5  # [°C]  initial temperature of all layers
+n = 12  # [] number of layers
+T0 = 0  # [°C]  initial temperature of all layers
 dx = D/n  # [m] layer thickness
 # Thermal conductivity of ice or snow [W m-1 K-1]: now function of rho and T, following Calonne et al. (2019)
 Cp = 2090  # [J kg-1 K-1] Specific heat capacity of ice
 L = 334000  # [J kg-1] Latent heat of water
-rho = 400  # [kg m-3] Initial density of the snow or ice - can be scalar or density profile of depth D with n elements
+rho = 350  # [kg m-3] Initial density of the snow or ice - can be scalar or density profile of depth D with n elements
 iwc = 5  # [% of pore volume] Max. possible irreducible water content in snow
 por = 0.4  # [] porosity of snow where water saturated (slush) - Variable only used to convert SIF from m w.e. to m
 dt = 300  # [s] numerical time step, needs to be a fraction of 86400 s
@@ -85,9 +79,9 @@ k_ref_i = 2.107  # [W m^-1 k^-1]
 k_ref_a = 0.024  # [W m^-1 k^-1]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+# output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
 # output_dir = r'O:\test_1D_heat_conduction'
-# output_dir = r'D:\modelling\1d_heat_transfer'
+output_dir = r'D:\modelling\1d_heat_transfer'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create
@@ -187,37 +181,6 @@ hp.plotting(T_evol, dt_plot, dt, y, D, True, phi, days,
 
 hp.test_T_plotting1(T_evol, phi, refreeze_c, rho_evol, iw_evol, D_evol, t, melt, days, iwc, dt, n, dx, output_dir)
 
-# write output
-# Xarray DataArray of all simulated temperatures
-da_to = xr.DataArray(
-    data=T_evol.transpose(),
-    dims=['time', 'z'],
-    coords=dict(
-        z=y,
-        time=t
-    ),
-    attrs=dict(description="Simulated firn temperatures.", units='degree_Celsius'),
-)
-da_to.name = 'T'
-
-# Xarray DataArray of all simulated daily refreezing rates
-da_ro = xr.DataArray(
-    data=refreeze[1,:],
-    dims=['time'],
-    coords=dict(
-        time=t
-    ),
-    attrs=dict(description="Simulated refreezing rates at the top of the modelling domain.",
-               units='mm w.e. per time step',
-               long_name='Refreezing R refers to water that refreezes, does not include surrounding matrix'),
-)
-da_ro.name = 'R'
-
-da_to = da_to.resample(time='1D').mean()
-da_to = da_to.coarsen(z=2, boundary='trim').mean()
-
-da_ro = da_ro.resample(time='1D').sum()
-
-da_to.to_netcdf(path=output_dir + '/simulated_daily_T_evolution.nc')
-da_ro.to_netcdf(path=output_dir + '/simulated_daily_refreezing.nc')
+# write output netCDF files
+ho.write_output(T_evol, refreeze, output_dir, y, t)
 
