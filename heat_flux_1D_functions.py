@@ -95,6 +95,24 @@ def rho_por_irwc_max(rho, iwc):  # calculate the maximum amount of irreducible w
     irwc_max *= porosity > (1 - 873 / 917)  # irwc_max as fraction of 1 (where 1 represents total volume of layer)
     return porosity, irwc_max
 
+def permeability():
+    # code to be called at the top of bucket_scheme()
+
+    # code first detects all groups of layers with rho > 873 or 830 kg m^-3
+
+    # code quantifies the thickness of each group, only groups above a certain threshold thickness are being kept
+
+    # conde quantifies permeability of each group in something like mm w.e. day^-1 (then translated to
+    # mm w.e. per time step). If thickness exceeds a certain value (3.x m, as per Jullien et al. (subm)?)
+    # then permeability becomes zero
+
+    # the output of this code is:
+    #  - top and bottom of all low-permeability zone (thick ice layers, that is ice slabs)
+    #  - top and bottom of all porous (high-permeability) zone (snow and firn including thin ice layers)
+    #  - maximum possible percolation of meltwater into top of each porous zone
+    #    (top (snow) zone infinite, underlying porous zone depending on overlying slab thickness
+    pass
+
 
 def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
 
@@ -106,6 +124,15 @@ def bucket_scheme(L, Cp, melt, iw, irwc_max, T_in, rho, dx, j):
     irwc_available *= (irwc_available > 0)  # to be sure available IRWC is nowhere below zero
 
     melt_f = melt[j] / dx  # convert melt to a fraction of dx
+
+    # to be implemented to calculate the full firn pack and the ice slabs
+    # melt_f now needs to be broken up into fractions that can reach the different porous zones defined
+    # in permeability(). Then all the calculations below need to be repeated in a loop for the number of
+    # porous zones.
+    # - The top porous zone (snow layer) is subject to melt_f percolating
+    # - the second zone can have a certain meltwater input defined by the overlying ice layer's permeability
+    # - whether the second zone receives water depends on whether melt > 0 and/or a water-saturated layer is
+    #   on top the overlying slab
 
     # calculate irreducible water distribution in all layers without a loop
     irwc_cs = np.cumsum(irwc_available)
