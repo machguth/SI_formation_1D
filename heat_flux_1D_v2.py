@@ -24,6 +24,8 @@
       the smaller layer spacing and the larger alpha, the shorter the time steps need to be chosen
     - thermal conductivity is a function of density, following Calonne et al. (2019)
 
+todo: add additional figure showing snow and firn temperature evolution as a colormap
+
 """
 
 import numpy as np

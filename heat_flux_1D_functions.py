@@ -106,6 +106,9 @@ def permeability():
     # mm w.e. per time step). If thickness exceeds a certain value (3.x m, as per Jullien et al. (subm)?)
     # then permeability becomes zero
 
+    # in the future once this code is coupled to Nicole's model, then permeability could additionally be a
+    # function of extensional strain rates, to mimic the effect that crevasse formation has on slab permeability
+
     # the output of this code is:
     #  - top and bottom of all low-permeability zone (thick ice layers, that is ice slabs)
     #  - top and bottom of all porous (high-permeability) zone (snow and firn including thin ice layers)
