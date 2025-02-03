@@ -210,9 +210,9 @@ def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evo
         tick.set_horizontalalignment('right')
     ax[4].set_xlabel('Date')
     ax[4].set_ylabel('$W_l$ (kg m$^{-3}$)')
-    ax[4].set_title('Layer water content $W_l$ and cumulative discharge $\Sigma D$ at snowpack bottom')
+    ax[4].set_title('Layer water content $W_l$ and cumulative discharge $\\Sigma D$ at snowpack bottom')
     ax4 = ax[4].twinx()
-    ax4.set_ylabel('$\Sigma D$ (mm)', color='Tab:orange')
+    ax4.set_ylabel('$\\Sigma D$ (mm)', color='Tab:orange')
     ax4.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
     ax4.plot(t[:-1], D_evol[:-1] * 1000, color='Tab:orange')  # convert to mm
 
@@ -278,9 +278,9 @@ def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw
         tick.set_horizontalalignment('right')
     ax[4].set_xlabel('Date')
     ax[4].set_ylabel('$W_l$ (kg m$^{-3}$)')
-    ax[4].set_title('Layer water content $W_l$ and cumulative discharge $\Sigma D$ at snowpack bottom')
+    ax[4].set_title('Layer water content $W_l$ and cumulative discharge $\\Sigma D$ at snowpack bottom')
     ax4 = ax[4].twinx()
-    ax4.set_ylabel('$\Sigma D$ (mm)', color='Tab:orange')
+    ax4.set_ylabel('$\\Sigma D$ (mm)', color='Tab:orange')
     ax4.tick_params(axis='y', color='Tab:orange', labelcolor='Tab:orange')
     ax4.plot(t[tr[0]:tr[1]], D_evol[tr[0]:tr[1]] * 1000, color='Tab:orange')  # convert to mm
 
