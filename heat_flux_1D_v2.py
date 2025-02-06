@@ -47,7 +47,7 @@ time_start = datetime.datetime.now()
 # start and end date define the duration of the model run. The two variables are used also
 # when there is no comparison to measurements.
 start_date = '2022/07/06 14:15:00'  # '2022/07/05 18:30:00' # '2022/09/06 14:15:00'  #
-end_date = '2022/08/31 23:30:00' # '2022/12/31 23:30:00'
+end_date = '2022/08/31 23:30:00'  #'2022/08/15 23:30:00'  #  # '2022/12/31 23:30:00'
 
 D = 0.5  # [m] thickness of snow pack (top-down refreezing) or ice slab (bottom-up refreezing)
 n = 12  # [] number of layers
@@ -80,9 +80,9 @@ k_ref_i = 2.107  # [W m^-1 k^-1]
 k_ref_a = 0.024  # [W m^-1 k^-1]
 
 # output_dir = r'C:\horst\modeling\lateralflow'
-# output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\test'
+output_dir = r'C:\Users\machguth\OneDrive - Université de Fribourg\modelling\1D_heat_conduction\56d'
 # output_dir = r'O:\test_1D_heat_conduction'
-output_dir = r'D:\modelling\1d_heat_transfer'
+# output_dir = r'D:\modelling\1d_heat_transfer'
 
 # ============================================== Preparations ===================================================
 # check if output folder exists, if no create

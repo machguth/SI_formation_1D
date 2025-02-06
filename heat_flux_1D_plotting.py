@@ -226,7 +226,7 @@ def test_T_plotting1(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw_evo
     ax[0].legend(bbox_to_anchor=(1.2, 1.0), title='Depth (m)')
     fig.tight_layout()
 
-    plt.savefig(os.path.join(output_dir, 'test_plot_D{:.2f}'.format(layer_depths[-1]) + 'm_' + str(int(days)) + 'd_'
+    plt.savefig(os.path.join(output_dir, 'plot_D{:.1f}'.format(layer_depths[-1]) + 'm_' + str(int(days)) + 'd_'
                              + str(int(dt)) + 's_iwc' + str(int(iwc)) + '.png'))
 
 
@@ -292,5 +292,5 @@ def test_detail_plotting(T_evol, phi, refreeze_c, refreeze_c_mmice, rho_evol, iw
     ax[0].legend(bbox_to_anchor=(1.2, 1.0), title='Depth (m)')
     fig.tight_layout()
 
-    plt.savefig(os.path.join(output_dir, 'test_details_D{:.2f}'.format(layer_depths[-1]) + 'm_' + str(int(days)) + 'd_'
+    plt.savefig(os.path.join(output_dir, 'details_D{:.1f}'.format(layer_depths[-1]) + 'm_' + str(int(days)) + 'd_'
                              + str(int(dt)) + 's_iwc' + str(int(iwc)) + '.png'))
