@@ -50,6 +50,21 @@ def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
     return T_surf
 
 
+def rho_por_irwc_max(rho, iwc):  # calculate the maximum amount of irreducible water content (IRWC) per layer
+    # as function of rho using a fixed percentage of irreducible water content, expressed in % of the pore volume
+    # This is based on Coléou and Lesaffre (1998), Annals of Glaciology, and Colbeck (1974), J. Glaciol.
+    # The previous study states that there is a weak dependency between porosity and IRWC expressed as % of
+    # pore volume (IRWC% = -0.0508 * porosity + 0.0947; own calc. based on data in Coléou and Lesaffre, 1998),
+    # their data cover only a limited range of densities. Hence, here we use a simple fixed percentage (Colbeck 1974).
+    porosity = 1 - rho / 917
+    irwc_max = porosity * (iwc / 100)  # [fraction of total volume 1] max potential irrd. water content
+    # for rho > 873 kg m-3, no more pore space can be used. This addresses pore close-off density which is rather at
+    # 830 kg m-3, but instead using 873 kg m-3 bcs. of this value corresponding to infiltration ice density as
+    # measured by Machguth et al. (2016)
+    irwc_max *= porosity > (1 - 873 / 917)  # irwc_max as fraction of 1 (where 1 represents total volume of layer)
+    return porosity, irwc_max
+
+
 def irwc_init(iwc, irwc_max, dx, n, T0):
     iw = irwc_max * 1000 * dx
     if (T0 < 0) & (iwc > 0):
@@ -80,20 +95,6 @@ def k_update(T, rho, a, rho_tr, k_ref_i, k_ref_a):
         theta * k_ice / k_ref_i * k_ref_firn
     return k
 
-
-def rho_por_irwc_max(rho, iwc):  # calculate the maximum amount of irreducible water content (IRWC) per layer
-    # as function of rho using a fixed percentage of irreducible water content, expressed in % of the pore volume
-    # This is based on Coléou and Lesaffre (1998), Annals of Glaciology, and Colbeck (1974), J. Glaciol.
-    # While the previous study states that there is a weak dependency between porosity and IRWC expressed as % of
-    # pore volume (IRWC% = -0.0508porosity + 0.0947; own calculation based on the data in Coléou and Lesaffre, 1998),
-    # their data cover only a limited range of densities and hence here we use a simple fixed percentage (Colbeck 1974).
-    porosity = 1 - rho / 917
-    irwc_max = porosity * (iwc / 100)  # max potential irreducible water content
-    # for rho > 873 kg m-3, no more pore space can be used. This addresses pore close-off density which is rather at
-    # 830 kg m-3, but instead using 873 kg m-3 bcs. of this value corresponding to infiltration ice density as
-    # measured by Machguth et al. (2016)
-    irwc_max *= porosity > (1 - 873 / 917)  # irwc_max as fraction of 1 (where 1 represents total volume of layer)
-    return porosity, irwc_max
 
 def permeability():
     # code to be called at the top of bucket_scheme()
