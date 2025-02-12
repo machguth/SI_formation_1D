@@ -30,7 +30,7 @@ def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
 
 
 def irrw(iwc, n, dx, rho, T0):
-    iw = np.ones(n) * dx * 1000 * rho / 1000 * iwc / 100
+    iw = np.ones(n) * porosity * (iwc / 100) * 1000 * dx  # [kg per layer per m2] 
     if isinstance(T0, (int, float)):
         if (T0 < 0) & (iwc > 0):
             print('\n *** Warning: irreducible water cont. > 0 for negative T0. Setting irred. water content to 0. *** \n')
@@ -272,10 +272,11 @@ def refreeze_to_da(t, refreeze, slushatbottom, save_path=None):
 
 
 def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
-             t_final, t, refreeze_c, output_dir, m, iwc, save_to=None):
+             t_final, t, refreeze_c, iwc, 
+             save_to=None):
 
-    plt.rcParams.update({'font.size': 28})
-    fig, ax = plt.subplots(2, figsize=(24, 20), gridspec_kw={'height_ratios': [3, 1]})
+    #plt.rcParams.update({'font.size': 28})
+    fig, ax = plt.subplots(2, figsize=(12, 10), gridspec_kw={'height_ratios': [3, 1]})
     t_sel = np.arange(0, len(T_evol[0, :]), dt_plot/dt)
     n_t_sel = len(t_sel)
     colors = plt.cm.brg(np.linspace(0, 1, n_t_sel))
@@ -335,11 +336,13 @@ def plotting(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
     if save_to is not None:
         plt.savefig(save_to)
     
-    return
+    return fig
     
 
 def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, days,
-                               t_final, t, refreeze_c, output_dir, iwc, da, m, validation_dates):
+                               t_final, t, refreeze_c, iwc, 
+                               da, validation_dates,
+                               save_to=None):
 
     colors_validation = ['tab:red', 'tab:cyan', 'tab:purple', 'tab:orange', 'tab_pink']
     plt.rcParams.update({'font.size': 28})
@@ -399,15 +402,8 @@ def plotting_incl_measurements(T_evol, dt_plot, dt, y, D, slushatbottom, phi, da
 
     plt.tight_layout()
 
-    if slushatbottom:
-        direction = 'bottom-SI'
-    else:
-        direction = 'top-SI'
+    if save_to is not None:
+        plt.savefig(save_to)
 
-    if m == 1:
-        plt.savefig(os.path.join(output_dir, 'test_1D_heat_flux_' + str(int(days)) + 'd_'
-                                 + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas' +'.png'))
-    else:
-        plt.savefig(os.path.join(output_dir, 'test_1D_heat_flux_' + str(int(days)) + 'd_'
-                                 + str(int(dt)) + 's_iwc' + str(int(iwc)) + '_' + direction + '_comp_meas_' +
-                                 'Tmultiplied_by_{:.1f}'.format(m) + '.png'))
+    return fig
+    
