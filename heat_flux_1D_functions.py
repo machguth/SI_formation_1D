@@ -51,7 +51,7 @@ def tsurf_sine(days, t_final, dt, years, Tmean, Tamplitude):
 
 
 def rho_por_irwc_max(rho, iwc):  # calculate the maximum amount of irreducible water content (IRWC) per layer
-    # as function of rho using a fixed percentage of irreducible water content, expressed in % of the pore volume
+    # as function of rho using a fixed percentage of irreducible water saturation, expressed in % of the pore volume
     # This is based on Coléou and Lesaffre (1998), Annals of Glaciology, and Colbeck (1974), J. Glaciol.
     # The previous study states that there is a weak dependency between porosity and IRWC expressed as % of
     # pore volume (IRWC% = -0.0508 * porosity + 0.0947; own calc. based on data in Coléou and Lesaffre, 1998),
