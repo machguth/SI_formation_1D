@@ -16,19 +16,19 @@ def create_test_data(val1, val2, length1, length2, rep):
     test_data = np.tile(c, rep)
     return test_data
 
-def neumann_criteria():
-    # this piece of code test whether the Neumann numerical stability criterion is always satisfied
-    # for the given dx and dt, as well as for a possible range of alpha (depending on rho and T)
-
-    rho_range = np.arange(200, 1000, 100)  # assuming possible range in rho is 200 to 900 kg m^3
-    T_range = np.arange()
-    iw_zero = np.zeros(len(rho_range))  # IRWC irrelevant here but is input to alpha_update() --> simply set to zero
-
-    k = k_update(T, rho, a, rho_tr, k_ref_i, k_ref_a)
-
-    alpha = alpha_update(k, rho_range, Cp, n, iw_zero)
-
-    nm = alpha * dt / dx**2
+# def neumann_criteria():
+#     # this piece of code test whether the Neumann numerical stability criterion is always satisfied
+#     # for the given dx and dt, as well as for a possible range of alpha (depending on rho and T)
+#
+#     rho_range = np.arange(200, 1000, 100)  # assuming possible range in rho is 200 to 900 kg m^3
+#     T_range = np.arange()
+#     iw_zero = np.zeros(len(rho_range))  # IRWC irrelevant here but is input to alpha_update() --> simply set to zero
+#
+#     k = k_update(T, rho, a, rho_tr, k_ref_i, k_ref_a)
+#
+#     alpha = alpha_update(k, rho_range, Cp, n, iw_zero)
+#
+#     nm = alpha * dt / dx**2
 
 
 def C_to_K(T):
